@@ -1,0 +1,29 @@
+version: 0.2
+
+#env:
+#  variables:
+#    key: "value"
+#    key: "value"
+
+phases:
+  build:
+    commands:
+     - docker --version
+  post_build:
+    commands:
+      - echo "File listing follows:"
+      - ls -l
+#reports:
+#  terratest-reports:
+#    files:
+#      - "**/*.xml"
+#      - "**/*.log"
+#    base-directory: "../da-transform-terraform-modules/test/reports"
+#    discard-paths: no
+artifacts:
+  files:
+    - plan.out
+  name: plan-output
+cache:
+  paths:
+    - .terraform
