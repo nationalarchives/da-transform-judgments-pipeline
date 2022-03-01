@@ -20,10 +20,10 @@ phases:
 #      - "**/*.log"
 #    base-directory: "../da-transform-terraform-modules/test/reports"
 #    discard-paths: no
-artifacts:
-  files:
-    - plan.out
-  name: plan-output
-cache:
-  paths:
-    - .terraform
+# artifacts:
+#   files:
+#     - plan.out
+#   name: plan-output
+# cache:
+#   paths:
+#     - .terraform
