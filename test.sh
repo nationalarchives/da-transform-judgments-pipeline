@@ -2,7 +2,8 @@
 
 set -e
 
-echo $image_name
+git branch --show-current
+git diff origin/test HEAD^^
 echo "Looking for iamges to build"
 
 # for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
