@@ -1,4 +1,4 @@
-#!/bim/bash
+#!/bin/bash
 
 set -e
 docker ps
