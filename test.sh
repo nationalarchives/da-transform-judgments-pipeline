@@ -4,7 +4,7 @@ set -e
 
 cb=`git branch --show-current`
 echo $cb
-str="$cb"
+str="${cb// /}"
 echo $str
 git diff origin/${str} HEAD^
 echo "Looking for iamges to build"
