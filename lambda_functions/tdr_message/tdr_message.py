@@ -9,7 +9,7 @@ import os
 client = boto3.client('stepfunctions')
 STATE_MACHINE_ARN = os.environ['SFN_ARN']
 def lambda_handler(event, context):
-    print(event['Records'])	
+    print(event)
     for record in event['Records']:
         payload = json.loads(record["body"])
     
