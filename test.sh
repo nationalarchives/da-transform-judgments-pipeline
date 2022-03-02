@@ -3,7 +3,7 @@
 set -e
 
 cb=$(git branch --show-current)
-git diff origin/$cb HEAD^
+git diff origin/${cb} HEAD^
 echo "Looking for iamges to build"
 
 # for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
