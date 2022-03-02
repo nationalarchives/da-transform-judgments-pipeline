@@ -1,0 +1,15 @@
+{
+    "repositories": [
+        {
+            "repositoryArn": "arn:aws:ecr:eu-west-2:454286877087:repository/tdr_message",
+            "registryId": "454286877087",
+            "repositoryName": "tdr_message",
+            "repositoryUri": "454286877087.dkr.ecr.eu-west-2.amazonaws.com/tdr_message",
+            "createdAt": "2022-03-02T15:00:58+00:00",
+            "imageTagMutability": "MUTABLE",
+            "imageScanningConfiguration": {
+                "scanOnPush": true
+            }
+        }
+    ]
+}
