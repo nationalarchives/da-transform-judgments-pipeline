@@ -18,8 +18,8 @@ else
     aws ecr create-repository --repository-name $image_name --region eu-west-2 --image-scanning-configuration scanOnPush=true --image-tag-mutability MUTABLE  
 fi
 
-docker tag  $image_name:latest $account_id.dkr.ecr.us-east-1.amazonaws.com/$image_name:`date`
-docker tag  $image_name:latest $account_id.dkr.ecr.us-east-1.amazonaws.com/$image_name:latest
+docker tag  $image_name:latest $account_id.dkr.ecr.eu-west-2.amazonaws.com/$image_name:`date`
+docker tag  $image_name:latest $account_id.dkr.ecr.eu-west-2.amazonaws.com/$image_name:latest
 docker push $account_id.dkr.ecr.eu-west-2.amazonaws.com/$image_name:`date` 
 docker push $account_id.dkr.ecr.eu-west-2.amazonaws.com/$image_name:latest    
 
