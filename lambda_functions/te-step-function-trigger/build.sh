@@ -4,8 +4,6 @@ set -e
 source_path=$(which $0)
 
 dir_name=$(dirname $source_path)
-echo $dir_name
-basename $dir_name
 image_name=$(basename $dir_name)
 account_id=`aws sts get-caller-identity --output text --query 'Account'`
 docker --version

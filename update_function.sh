@@ -2,14 +2,11 @@
 
 set -e
 
-echo "Looking for iamges to build"
-
-
 
 for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
 
-    if [[ -f "$dir/build_if.sh" ]]; then
-        ${dir}/build_if.sh  
+    if [[ -f "$dir/update_function.sh" ]]; then
+        ${dir}/update_function.sh  
     fi
 done
 
