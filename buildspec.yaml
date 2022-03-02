@@ -8,6 +8,8 @@ version: 0.2
 phases:
   build:
     commands:
+      - pwd
+      - ls -la
       - ./test.sh
       - docker --version
   post_build:
