@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-
+git branch
 cb=`git branch --show-current`
 echo $cb
 str="${cb// /}"
