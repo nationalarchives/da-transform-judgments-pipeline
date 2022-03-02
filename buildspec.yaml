@@ -6,6 +6,9 @@ version: 0.2
 #    key: "value"
 
 phases:
+  install:
+    runtime-versions:
+        docker: 18
   build:
     commands:
       - role_arn=${ASSUME_ROLE_ARN:=arn:aws:iam::882876621099:role/terraform}
