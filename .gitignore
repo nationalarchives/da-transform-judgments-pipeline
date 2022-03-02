@@ -1,0 +1,6 @@
+.venv/
+dist/
+build/
+*.egg-info/
+*.whl
+tmp-build-requirements.txt
