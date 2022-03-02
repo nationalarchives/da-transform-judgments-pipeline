@@ -2,7 +2,7 @@
 
 set -e
 
-cb="$(git branch --show-current)"
+cb="test"
 git diff origin/${cb} HEAD^
 echo "Looking for iamges to build"
 
