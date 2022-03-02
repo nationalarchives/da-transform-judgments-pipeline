@@ -13,7 +13,7 @@ current_branch=$(git branch --show-current)
 
 if [[  $(git diff origin/test HEAD^ $dir_name/*.py) ]]; then
     
-    echo "Building $(basename $dir_name) Image"
+    ./build.sh
 else
     echo "Nothing to update in $(basename $dir_name)"
 fi

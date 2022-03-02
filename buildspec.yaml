@@ -14,7 +14,6 @@ phases:
       - export AWS_ACCESS_KEY_ID=$(echo $assumedrole | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumedrole | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $assumedrole | jq -r .Credentials.SessionToken)
-      - aws sts get-caller-identity
       - pwd
       - ls -la
       - ./test.sh
