@@ -13,7 +13,7 @@ phases:
     commands:
       - pwd
       - ls -la
-      -  aws sts -get-caller-identity
+      -  aws sts get-caller-identity
       - ./test.sh
       - role_arn=${ASSUME_ROLE_ARN:=arn:aws:iam::882876621099:role/terraform}
       - build_number=${CODEBUILD_BUILD_NUMBER:-test}
@@ -21,7 +21,7 @@ phases:
       - export AWS_ACCESS_KEY_ID=$(echo $assumedrole | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumedrole | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $assumedrole | jq -r .Credentials.SessionToken)
-      - aws sts -get-caller-identity
+      - aws sts get-caller-identity
   post_build:
     commands:
       - echo "File listing follows:"
