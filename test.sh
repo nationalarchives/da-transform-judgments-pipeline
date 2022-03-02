@@ -2,11 +2,23 @@
 
 set -e
 
+echo $image_name
 echo "Looking for iamges to build"
 
+# for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
+#     for file in $dir/*.sh ; do
+#         if [[ -f "$file" ]]; then
+#             $dir/build.sh
+#         fi
+#     done
+# done
+
 for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
-    if [[ -f "./lambda_functions/${dir}/build.sh" ]]; then
-        ./lambda_functions/${dir}/build.sh
+
+    if [[ -f "$dir/build_if.sh" ]]; then
+        ${dir}/build_if.sh
+    else
+        "Nothing to update"    
     fi
 done
 
@@ -18,4 +30,4 @@ done
 #     fi
 # done
 
-exit
+exit    
