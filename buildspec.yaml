@@ -8,7 +8,7 @@ version: 0.2
 phases:
   build:
     commands:
-      - role_arn=${ASSUME_ROLE_ARN:=arn:aws:iam::882876621099:role/zaizi/Zaizi_Admin_Role}
+      - role_arn=${ASSUME_ROLE_ARN:=arn:aws:iam::882876621099:role/terraform}
       - build_number=${CODEBUILD_BUILD_NUMBER:-test}
       - assumedrole=$(AWS_PAGER="" aws sts assume-role --role-arn ${role_arn} --role-session-name example-pipeline-${build_number} --duration-seconds 900)
       - export AWS_ACCESS_KEY_ID=$(echo $assumedrole | jq -r .Credentials.AccessKeyId)
