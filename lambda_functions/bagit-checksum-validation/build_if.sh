@@ -9,9 +9,9 @@ dir_name=$(dirname $source_path)
 
 
 
-current_branch=$(git branch --show-current)
+# current_branch=$(git branch --show-current)
 
-if [[  $(git diff origin/$current_branch HEAD^ $dir_name/*.py) ]]; then
+if [[  $(git diff origin/test HEAD^ $dir_name/*.py) ]]; then
     
     echo "Building $(basename $dir_name) Image"
 else
