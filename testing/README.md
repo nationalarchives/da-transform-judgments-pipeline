@@ -9,6 +9,7 @@ s3_object_bagit=
 s3_object_sha=
 
 # Optional inputs:
+consignment_reference=
 presign_url_expiry_secs=
 consignment_type=
 number_of_retries=
@@ -20,7 +21,7 @@ printf '{
   "consignment-type": "%s",
   "number-of-retries": %s
 }\n' \
-    "TDR-2021-CF6L" \
+    "${consignment_reference}" \
     "$(aws s3 presign "s3://${s3_bucket}/${s3_object_bagit}" --expires-in ${presign_url_expiry_secs:-60})" \
     "$(aws s3 presign "s3://${s3_bucket}/${s3_object_sha}" --expires-in ${presign_url_expiry_secs:-60})" \
     "${consignment_type:-judgement}" \

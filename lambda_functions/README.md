@@ -81,7 +81,7 @@ aws ecr \
     "${repository_uri}"
 ```
 
-10. Push the tagged images
+10. Push the tagged images with:
 
 ```
 ./docker_push.sh "${repository_uri}"
