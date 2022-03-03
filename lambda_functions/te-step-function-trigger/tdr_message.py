@@ -17,6 +17,6 @@ def lambda_handler(event, context):
     print(payload)
     response = client.start_execution(
 		stateMachineArn = STATE_MACHINE_ARN,
-		name = "test_tna-" + unique_id,
+		name = "te-tdr-trigger" + unique_id,
 		input = json.dumps(payload)	
 		)
