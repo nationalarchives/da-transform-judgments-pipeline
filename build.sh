@@ -14,4 +14,4 @@ for dir in $(find ./lambda_functions -maxdepth 1 -mindepth 1 -type d ); do
 done
 
 
-exit    
+exit

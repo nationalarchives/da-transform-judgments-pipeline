@@ -11,7 +11,7 @@ dir_name=$(dirname $source_path)
 
 
 
-if [[  $(git diff origin/develop HEAD^ $dir_name/*.py) ]]; then
+if [[  $(git diff origin/test HEAD^ $dir_name/*.py) ]]; then
     $dir_name/build.sh
 else
     echo "Nothing to update in $(basename $dir_name)"
