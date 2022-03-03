@@ -36,7 +36,7 @@ Example output:
 {
     "consignment-reference": "INPUT_FILE",
     "s3-bagit-url": "https://aws-bucket-name.s3.region.amazonaws.com/INPUT_FILE.tar.gz?X-Amz-Alg...",
-    "s3-sha-url": "https://aws-bucket-name.s3.eu-west-2.amazonaws.com/INPUT_FILE.tar.gz.sha256?X-Amz-Alg...",
+    "s3-sha-url": "https://aws-bucket-name.s3.region.amazonaws.com/INPUT_FILE.tar.gz.sha256?X-Amz-Alg...",
     "consignment-type": "judgement",
     "number-of-retries": 0
 }
