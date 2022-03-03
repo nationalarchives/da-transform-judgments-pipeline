@@ -2,6 +2,11 @@
 
 ## Building
 
+At the time of writing, these steps apply to:
+
+* [./te-bagit-checksum-validation](./te-bagit-checksum-validation)
+* [./te-files-checksum-validation](./te-files-checksum-validation)
+
 Pre-requisistes:
 
 * Ensure `aws` CLI access to the target environment is configured
@@ -22,15 +27,13 @@ python3 -m venv .venv
 . .venv/bin/activate
 ```
 
-3. Change into the Lambda function directory, for example one of:
-
-* [./te-bagit-checksum-validation](./te-bagit-checksum-validation)
-* [./te-files-checksum-validation](./te-files-checksum-validation)
+3. Change into the Lambda function's directory (e.g.
+  [./te-bagit-checksum-validation](./te-bagit-checksum-validation))
 
 4. Ensure the versions numbers are correct in the following files:
 
 * For the Docker image: `vars.sh`
-* For the support library: [`../s3_lib/version.sh`](../../s3_lib/version.sh)
+* For the support library: [`../s3_lib/version.sh`](../s3_lib/version.sh)
 
 5. To build and package into a local Docker image run the following:
 
