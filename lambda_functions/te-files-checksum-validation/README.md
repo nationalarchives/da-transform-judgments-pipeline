@@ -1,1 +1,3 @@
-See steps in [`../te-bagit-checksum-validation/README.md`](../te-bagit-checksum-validation/README.md)
+Defines a Docker image for the te-files-checksum-validation step.
+
+For build instructions see: [`../README.md`](../README.md)
