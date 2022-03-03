@@ -20,6 +20,28 @@ logger.setLevel(logging.INFO)
 env_output_bucket = common_lib.get_env_var('S3_TEMPORARY_BUCKET', must_exist=True, must_have_value=True)
 
 def handler(event, context):
+    """
+    Copy input files from a URL (typically an AWS pre-shared URL) to an s3
+    bucket defined in environment variable `S3_TEMPORARY_BUCKET`; the input
+    file URLs are obtained from fields `s3-bagit-url` and `s3-sha-url` from
+    the incoming `event` payload, an example of which is:
+
+    {
+        "consignment-reference": "INPUT_FILE",
+        "s3-bagit-url": "https://aws-bucket-name.s3.region.amazonaws.com/INPUT_FILE.tar.gz?X-Amz-Alg...",
+        "s3-sha-url": "https://aws-bucket-name.s3.region.amazonaws.com/INPUT_FILE.tar.gz.sha256?X-Amz-Alg...",
+        "consignment-type": "judgement",
+        "number-of-retries": 0
+    }
+
+    Returns the following payload, or raises an error:
+
+    {
+        's3-bucket': env_output_bucket,
+        's3-bagit-name': s3_bagit_name,
+        'event': event
+    }
+    """
     logger.info(f'handler start: event="{event}"')
     
     # Get input parameters from Lambda function's event object    
@@ -74,9 +96,10 @@ def handler(event, context):
             s3_bagit_name,
             expected_checksum)
 
-    # Pass output data to next step
+    # Set output data
     logger.info('handler return')
     return {
         's3-bucket': env_output_bucket,
-        's3-bagit-name': s3_bagit_name
+        's3-bagit-name': s3_bagit_name,
+        'event': event
     }
