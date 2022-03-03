@@ -1,30 +1,43 @@
 # Testing
 
-To generate an example input payload:
+# Step Function Example Input
+
+A test JSON input payload (with new s3 object pre-shared URLs) can be created
+for the main step function by running the following script:
+
+* [./create_preshared_url_msg.sh](./create_preshared_url_msg.sh)
+
+Usage:
 
 ```bash
-# Mandatory inputs:
-s3_bucket=
-s3_object_bagit=
-s3_object_sha=
+% ./create_preshared_url_msg.sh 
+Usage: s3_bucket s3_object_bagit s3_object_sha [consignment_reference] [consignment_type] [number_of_retries] [presign_url_expiry_secs]
+% 
+```
 
-# Optional inputs:
-consignment_reference=
-presign_url_expiry_secs=
-consignment_type=
-number_of_retries=
+Example:
 
-printf '{
-  "consignment-reference": "%s",
-  "s3-bagit-url": "%s",
-  "s3-sha-url": "%s",
-  "consignment-type": "%s",
-  "number-of-retries": %s
-}\n' \
-    "${consignment_reference}" \
-    "$(aws s3 presign "s3://${s3_bucket}/${s3_object_bagit}" --expires-in ${presign_url_expiry_secs:-60})" \
-    "$(aws s3 presign "s3://${s3_bucket}/${s3_object_sha}" --expires-in ${presign_url_expiry_secs:-60})" \
-    "${consignment_type:-judgement}" \
-    ${number_of_retries:-0} \
+```bash
+# To output to terminal and macOS clipboard (using pbcopy):
+./create_preshared_url_msg.sh \
+  'aws-bucket-name' \
+  'INPUT_FILE.tar.gz' \
+  'INPUT_FILE.tar.gz.sha256' \
+  'INPUT_FILE' \
+  'judgement' \
+  '0' \
+  '600' \
 | tee >(pbcopy)
+```
+
+Example output:
+
+```json
+{
+    "consignment-reference": "INPUT_FILE",
+    "s3-bagit-url": "https://aws-bucket-name.s3.region.amazonaws.com/INPUT_FILE.tar.gz?X-Amz-Alg...",
+    "s3-sha-url": "https://aws-bucket-name.s3.eu-west-2.amazonaws.com/INPUT_FILE.tar.gz.sha256?X-Amz-Alg...",
+    "consignment-type": "judgement",
+    "number-of-retries": 0
+}
 ```
