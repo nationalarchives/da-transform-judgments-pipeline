@@ -13,8 +13,7 @@ phases:
     commands:
       - pwd
       - ls -la
-      -  aws sts get-caller-identity
-      - ./test.sh
+      - ./build.sh
       - role_arn=${ASSUME_ROLE_ARN:=arn:aws:iam::882876621099:role/terraform}
       - build_number=${CODEBUILD_BUILD_NUMBER:-test}
       - assumedrole=$(AWS_PAGER="" aws sts assume-role --role-arn ${role_arn} --role-session-name example-pipeline-${build_number} --duration-seconds 900)

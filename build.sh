@@ -2,7 +2,7 @@
 
 set -e
 
-echo "Looking for iamges to build"
+echo "Looking for images to build"
 
 
 
