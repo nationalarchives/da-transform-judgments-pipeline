@@ -5,8 +5,14 @@ import tarfile  # https://docs.python.org/3/library/tarfile.html
 import io
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def untar_s3_object(input_bucket_name, object_name, output_bucket_name=None):
+    """
+    Perform an untar operation on the specified s3 `object_name` in
+    `input_bucket_name`; untar to `input_bucket_name` unless
+    `output_bucket_name` is provided.
+    """
     logger.info('untar start')
     output_bucket_name = input_bucket_name if output_bucket_name is None else output_bucket_name
     s3_client = boto3.client('s3')

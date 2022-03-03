@@ -6,6 +6,7 @@ import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/referenc
 import hashlib  # https://docs.python.org/3/library/hashlib.html
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 READ_BLOCK_SIZE = 5 * 1024 * 1024  # s3 multipart min=5MB, except "last" part
 ENCODING_UTF8 = 'utf-8'
@@ -14,6 +15,9 @@ ITEM_BASENAME = 'basename'
 ITEM_CHECKSUM = 'checksum'
 
 def checksum_item(file, basename, checksum):
+    """
+    Creates a dictionary object to represent an item and its checksum.
+    """
     return {
         ITEM_FILE: file,
         ITEM_BASENAME: basename,
@@ -21,6 +25,10 @@ def checksum_item(file, basename, checksum):
     }
 
 def get_manifest_url(url):
+    """
+    Return a list of dictionary items from a URL (with each item having a
+    filename, basename and checksum).
+    """
     logger.info('get_manifest_url start')
     response = requests.get(url, stream=True)
     if not response.ok:
@@ -41,6 +49,10 @@ def get_manifest_url(url):
     return checksums
 
 def get_manifest_s3(bucket_name, object_name):
+    """
+    Return a list of dictionary items from an AWS s3 object (with each item
+    having a filename, basename and checksum).
+    """
     logger.info(
         f'get_manifest_object start: bucket_name={bucket_name} '
         f'object_name={object_name}')
@@ -61,6 +73,11 @@ def get_manifest_s3(bucket_name, object_name):
     return checksums
 
 def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
+    """
+    Calculate the SHA 256 checksum of `object_name` in `bucket_name` and
+    confirm the checksum matches `expected_checsum`; if it does not match a
+    ValueError is raised.
+    """
     logger.info('verify_checksum start')
 
     s3_client = boto3.client('s3')
@@ -85,6 +102,12 @@ def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
     logger.info('verify_checksum end')
 
 def verify_s3_manifest_checksums(bucket_name, bagit_name):
+    """
+    Load the expected checksums from the manifest files located in
+    `bucket_name`/`bagit_name`, then verify the file checksums in the manifest
+    match the checksums calculated from the corresponding files located in
+    `bucket_name`/`bagit_name`.
+    """
     logger.info('verify_s3_manifest_checksums start')
     tag_manifest_object = f'{bagit_name}/tagmanifest-sha256.txt'
     data_manifest_object = f'{bagit_name}/manifest-sha256.txt'

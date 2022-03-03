@@ -5,6 +5,8 @@ import hashlib  # https://docs.python.org/3/library/hashlib.html
 import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/index.html
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 READ_BLOCK_SIZE = 5 * 1024 * 1024  # s3 multipart min=5MB, except "last" part
 
 def url_to_s3_object(
