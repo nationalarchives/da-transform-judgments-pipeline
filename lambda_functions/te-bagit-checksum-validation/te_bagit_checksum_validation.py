@@ -40,13 +40,32 @@ def handler(event, context):
         "number-of-retries": 0
     }
 
-    Returns the following payload, or raises an error:
+    A maximum retry count is read from environment variable `MAX_RETRIES`.
+
+    On success, the handler returns the following payload:
 
     {
+        'error': False,
+        'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
+        'max-retries': env_max_retries,
         'event': event
     }
+
+    For aniticipated processing errors, the following payload is returned:
+
+    {
+        'error': True,
+        'error_message': str(e),
+        'output-message': output_message,
+        's3-bucket': env_output_bucket,
+        's3-bagit-name': s3_bagit_name,
+        'max-retries': env_max_retries,
+        'event': event
+    }
+
+    Unexpected errors are propogated as an exception.
     """
     logger.info(f'handler start: event="{event}"')
     
@@ -117,6 +136,7 @@ def handler(event, context):
             'output-message': output_message,
             's3-bucket': env_output_bucket,
             's3-bagit-name': s3_bagit_name,
+            'max-retries': env_max_retries,
             'event': event
         }
 
@@ -127,5 +147,6 @@ def handler(event, context):
         'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
+        'max-retries': env_max_retries,
         'event': event
     }
