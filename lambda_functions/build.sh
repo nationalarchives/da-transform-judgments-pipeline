@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Build script for automated build
+# Build local docker image; only upload to ECR if AWS_REGION argument is given
 set -e
 
-if [ $# -ne 1 ]; then
-    printf 'ERROR: Usage: build_sub_directory_name\n'
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    printf 'ERROR: Usage: build_sub_directory_name [AWS_REGION]\n'
     exit 1
 fi
 
@@ -11,11 +11,6 @@ build_sub_dir="$1"
 
 if [ ! -d "${build_sub_dir}" ]; then
     printf 'Error: directory "%s" does not exist\n' "${build_sub_dir}" 1>&2
-    exit 1
-fi
-
-if [[ -z "$AWS_REGION" ]]; then
-    printf 'Error: environment variable AWS_REGION is not set\n' 1>&2
     exit 1
 fi
 
@@ -41,6 +36,13 @@ docker build --build-arg s3_lib_whl="${s3_lib_whl}" --tag "${docker_image}" "${b
 rm "${build_sub_dir}/${s3_lib_whl}"
 rm "${tmp_build_requirements}"
 docker images 
+
+# Exit with error at this point if AWS_REGION not passed to abort ECR updates
+if [[ -z "$2" ]]; then
+    printf 'Aborting build before ECR upload; AWS_REGION not specified\n' 1>&2
+    exit 1
+fi
+AWS_REGION="${2:?}"
 
 ecr_repository_name="lambda_functions/${docker_image_name:?}"
 printf 'Creating ECR repository "%s"\n' "${ecr_repository_name}"
