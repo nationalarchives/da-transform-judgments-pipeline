@@ -18,7 +18,6 @@ logger.setLevel(logging.INFO)
 
 # Get environment variable values
 env_output_bucket = common_lib.get_env_var('S3_TEMPORARY_BUCKET', must_exist=True, must_have_value=True)
-env_max_retries = common_lib.get_env_var('MAX_RETRIES', must_exist=True, must_have_value=True)
 
 # Define input event keys for those used in more than one place
 EVENT_KEY_NUM_RETRIES='number-of-retries'
@@ -49,7 +48,6 @@ def handler(event, context):
         'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
-        'max-retries': env_max_retries,
         'event': event
     }
 
@@ -61,7 +59,6 @@ def handler(event, context):
         'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
-        'max-retries': env_max_retries,
         'event': event
     }
 
@@ -136,7 +133,6 @@ def handler(event, context):
             'output-message': output_message,
             's3-bucket': env_output_bucket,
             's3-bagit-name': s3_bagit_name,
-            'max-retries': env_max_retries,
             'event': event
         }
 
@@ -147,6 +143,5 @@ def handler(event, context):
         'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
-        'max-retries': env_max_retries,
         'event': event
     }
