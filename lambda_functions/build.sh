@@ -22,8 +22,9 @@ s3_lib_whl_path="$(find ../s3_lib/dist/s3_lib*)"
 s3_lib_whl="$(basename "${s3_lib_whl_path}")"
 cp "${s3_lib_whl_path}" "${build_sub_dir}"
 
-# Update temporary requirements.txt with build whl file's name
+# Create temporary requirements.txt and add build whl file's name
 tmp_build_requirements="${build_sub_dir}/tmp-build-requirements.txt"
+cp "${build_sub_dir}/requirements.txt" "${tmp_build_requirements}"
 printf '\n%s\n' "${s3_lib_whl}" >> "${tmp_build_requirements}"
 
 # Source Docker build environment variables
