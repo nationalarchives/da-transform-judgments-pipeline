@@ -18,6 +18,12 @@ logger.setLevel(logging.INFO)
 
 # Get environment variable values
 env_output_bucket = common_lib.get_env_var('S3_TEMPORARY_BUCKET', must_exist=True, must_have_value=True)
+env_max_retries = common_lib.get_env_var('MAX_RETRIES', must_exist=True, must_have_value=True)
+
+# Define input event keys for those used in more than one place
+EVENT_KEY_NUM_RETRIES='number-of-retries'
+EVENT_KEY_BAGIT_URL='s3-bagit-url'
+EVENT_KEY_SHA_URL='s3-sha-url'
 
 def handler(event, context):
     """
@@ -44,61 +50,81 @@ def handler(event, context):
     """
     logger.info(f'handler start: event="{event}"')
     
-    # Get input parameters from Lambda function's event object    
-    consignment_reference = event['consignment-reference']
-    s3_bagit_url = event['s3-bagit-url']
-    s3_sha_url = event['s3-sha-url']
-    consignment_type = event['consignment-type']
-    number_of_retries = int(event['number-of-retries'])
+    try:
+        # Get input parameters from Lambda function's event object    
+        consignment_reference = event['consignment-reference']
+        s3_bagit_url = event[EVENT_KEY_BAGIT_URL]
+        s3_sha_url = event[EVENT_KEY_SHA_URL]
+        consignment_type = event['consignment-type']
+        number_of_retries = int(event[EVENT_KEY_NUM_RETRIES])
 
-    # Determine the resource name from the URL
-    s3_bagit_name = os.path.basename(urlparse(s3_bagit_url).path)
-    s3_sha_name = os.path.basename(urlparse(s3_sha_url).path)
+        # Setup output message with empty URLs and incremented retry counter
+        output_message = event.copy()
+        output_message[EVENT_KEY_NUM_RETRIES] += 1
+        output_message[EVENT_KEY_BAGIT_URL] = ''
+        output_message[EVENT_KEY_SHA_URL] = ''
+        logger.info(f'output_message={output_message}')
 
-    logger.info(
-        f'consignment_reference="{consignment_reference}" '
-        f's3_bagit_url="{s3_bagit_url}" s3_sha_url="{s3_sha_url}" '
-        f'consignment_type="{consignment_type}" '
-        f'number_of_retries="{number_of_retries}" '
-        f's3_bagit_name="{s3_bagit_name}" s3_sha_name="{s3_sha_name}" '
-        f'env_output_bucket="{env_output_bucket}"')
+        # Determine the resource name from the URL
+        s3_bagit_name = os.path.basename(urlparse(s3_bagit_url).path)
+        s3_sha_name = os.path.basename(urlparse(s3_sha_url).path)
 
-    # Copy files
-    logger.info(f'Copy "{s3_bagit_url}" to "{s3_bagit_name}" in "{env_output_bucket}"')
-    object_lib.url_to_s3_object(s3_bagit_url, env_output_bucket, s3_bagit_name)
-    logger.info(f'Copy "{s3_sha_url}" to "{s3_sha_name}" in "{env_output_bucket}"')
-    object_lib.url_to_s3_object(s3_sha_url, env_output_bucket, s3_sha_name)
+        logger.info(
+            f'consignment_reference="{consignment_reference}" '
+            f's3_bagit_url="{s3_bagit_url}" s3_sha_url="{s3_sha_url}" '
+            f'consignment_type="{consignment_type}" '
+            f'number_of_retries="{number_of_retries}" '
+            f's3_bagit_name="{s3_bagit_name}" s3_sha_name="{s3_sha_name}" '
+            f'env_output_bucket="{env_output_bucket}"')
 
-    # Load checksum(s) from the source manifest; there should be only 1 here
-    s3_sha_manifest = checksum_lib.get_manifest_url(s3_sha_url)
-    
-    # Only expect 1 checksum; verify this is so
-    checksum_count = len(s3_sha_manifest)
-    if checksum_count != 1:
-        raise ValueError(
+        # Copy files
+        logger.info(f'Copy "{s3_bagit_url}" to "{s3_bagit_name}" in "{env_output_bucket}"')
+        object_lib.url_to_s3_object(s3_bagit_url, env_output_bucket, s3_bagit_name)
+        logger.info(f'Copy "{s3_sha_url}" to "{s3_sha_name}" in "{env_output_bucket}"')
+        object_lib.url_to_s3_object(s3_sha_url, env_output_bucket, s3_sha_name)
+
+        # Load checksum(s) from the source manifest; there should be only 1 here
+        s3_sha_manifest = checksum_lib.get_manifest_url(s3_sha_url)
+        
+        # Only expect 1 checksum; verify this is so
+        checksum_count = len(s3_sha_manifest)
+        if checksum_count != 1:
+            raise ValueError(
                 f'Incorrect number of checksums; expected '
                 f'1, found {checksum_count}')
-    
-    manifest_file = s3_sha_manifest[0][checksum_lib.ITEM_FILE]
-    manifest_basename = s3_sha_manifest[0][checksum_lib.ITEM_BASENAME]
-    expected_checksum = s3_sha_manifest[0][checksum_lib.ITEM_CHECKSUM]
+        
+        manifest_file = s3_sha_manifest[0][checksum_lib.ITEM_FILE]
+        manifest_basename = s3_sha_manifest[0][checksum_lib.ITEM_BASENAME]
+        expected_checksum = s3_sha_manifest[0][checksum_lib.ITEM_CHECKSUM]
 
-    # Verify the file (basename) from the checksum file is in the s3 URL
-    if manifest_basename != s3_bagit_name:
-        raise ValueError(
+        # Verify the file (basename) from the checksum file is in the s3 URL
+        if manifest_basename != s3_bagit_name:
+            raise ValueError(
                 f'The name "{manifest_basename}" (derived from manifest file '
                 f'entry "{manifest_file}") does not match the value '
                 f'"{s3_bagit_name}" (derived from the input URL)')
 
-    # Validate the main checksum
-    checksum_lib.verify_s3_object_checksum(
-            env_output_bucket,
-            s3_bagit_name,
-            expected_checksum)
+        # Validate the main checksum
+        checksum_lib.verify_s3_object_checksum(
+                env_output_bucket,
+                s3_bagit_name,
+                expected_checksum)
+    except ValueError as e:
+        logging.error(f'handler error: {str(e)}')
+        return {
+            'error': True,
+            'error_message': str(e),
+            'output-message': output_message,
+            's3-bucket': env_output_bucket,
+            's3-bagit-name': s3_bagit_name,
+            'event': event
+        }
 
     # Set output data
     logger.info('handler return')
     return {
+        'error': False,
+        'output-message': output_message,
         's3-bucket': env_output_bucket,
         's3-bagit-name': s3_bagit_name,
         'event': event

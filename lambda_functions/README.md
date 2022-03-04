@@ -37,7 +37,7 @@ python3 -m venv .venv
 
 5. To build and package into a local Docker image run the following:
 
-* `./build.sh`
+* `./build_dev_local.sh`
 
 6. If the AWS ECR repository is not already created, create it by running:
 
