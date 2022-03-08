@@ -1,7 +1,7 @@
 # Testing
 
 * [Creating An Example Input Message](#creating-an-example-input-message)
-* [Testing Local Code](#testing-local-code)
+* [Local Testing](#local-testing)
 
 ## Creating An Example Input Message
 
@@ -49,7 +49,7 @@ Example output:
 }
 ```
 
-## Testing Local Code
+## Local Testing
 
 To run local code against test data in an arbitrary s3 bucket:
 
