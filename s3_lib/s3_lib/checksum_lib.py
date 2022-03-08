@@ -5,6 +5,12 @@ import os
 import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/index.html
 import hashlib  # https://docs.python.org/3/library/hashlib.html
 
+# Set global logging options; AWS environment may override this though
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -75,7 +81,7 @@ def get_manifest_s3(bucket_name, object_name):
 def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
     """
     Calculate the SHA 256 checksum of `object_name` in `bucket_name` and
-    confirm the checksum matches `expected_checsum`; if it does not match a
+    confirm the checksum matches `expected_checsum`; if it does not match, a
     ValueError is raised.
     """
     logger.info('verify_checksum start')
@@ -92,13 +98,16 @@ def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
         chunk = stream.read(READ_BLOCK_SIZE)
 
     hex_digest = hashlib_sha256.hexdigest()
-    logger.info(f'hexdigest         : "{hex_digest}"')
-    logger.info(f'expected_checksum : "{expected_checksum}"')
     if hex_digest != expected_checksum:
         raise ValueError(
-            f'Invalid checksum; calculated "{hex_digest}" but expected '
-            f'"{expected_checksum}" for object "{object_name}" in bucket '
-            f'"{bucket_name}"')
+            f'Calculated checksum "{hex_digest}" does not match expected '
+            f'checksum "{expected_checksum}" for object "{object_name}" in '
+            f'bucket "{bucket_name}"')
+    logger.info(
+        f'Calculated checksum "{hex_digest}" matches expected checksum '
+        f'"{expected_checksum}" for object "{object_name}" in bucket '
+        f'"{bucket_name}"')
+
     logger.info('verify_checksum end')
 
 def verify_s3_manifest_checksums(bucket_name, bagit_name):
@@ -113,17 +122,25 @@ def verify_s3_manifest_checksums(bucket_name, bagit_name):
     data_manifest_object = f'{bagit_name}/manifest-sha256.txt'
     tag_manifest_checksums = get_manifest_s3(bucket_name, tag_manifest_object)
     data_manifest_checksums = get_manifest_s3(bucket_name, data_manifest_object)
+    checked_files = {
+        'path': bagit_name,
+        'root': [],
+        'data': []
+    }
 
     logger.info(f'Validating {tag_manifest_object}')
     for item in tag_manifest_checksums:
         validation_object = f'{bagit_name}/{item[ITEM_FILE]}'
-        logger.info(f'item={item} validation_object={validation_object}')
+        checked_files['root'].append(validation_object)
+        logger.info(f'root item={item} validation_object={validation_object}')
         verify_s3_object_checksum(bucket_name, validation_object, item[ITEM_CHECKSUM])
     
     logger.info(f'Validating {data_manifest_object}')
     for item in data_manifest_checksums:
         validation_object = f'{bagit_name}/{item[ITEM_FILE]}'
-        logger.info(f'item={item} validation_object={validation_object}')
+        checked_files['data'].append(validation_object)
+        logger.info(f'data item={item} validation_object={validation_object}')
         verify_s3_object_checksum(bucket_name, validation_object, item[ITEM_CHECKSUM])
 
-    logger.info('verify_s3_manifest_checksums end')
+    logger.info('verify_s3_manifest_checksums return')
+    return checked_files

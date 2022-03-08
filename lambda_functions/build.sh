@@ -29,7 +29,7 @@ printf '\n%s\n' "${s3_lib_whl}" >> "${tmp_build_requirements}"
 
 # Source Docker build environment variables
 # shellcheck source=/dev/null
-. "${build_sub_dir}/vars.sh"
+. "${build_sub_dir}/version.sh"
 
 # Ignore any error from the following command (by adding || true)
 docker rmi "${docker_image:?}" || true
@@ -43,6 +43,7 @@ if [[ -z "$2" ]]; then
     printf 'Aborting build before ECR upload; AWS_REGION not specified\n' 1>&2
     exit 1
 fi
+
 AWS_REGION="${2:?}"
 
 ecr_repository_name="lambda_functions/${docker_image_name:?}"

@@ -4,15 +4,53 @@ import requests  # https://docs.python-requests.org/en/master/api/
 import hashlib  # https://docs.python.org/3/library/hashlib.html
 import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/index.html
 
+# Set global logging options; AWS environment may override this though
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 READ_BLOCK_SIZE = 5 * 1024 * 1024  # s3 multipart min=5MB, except "last" part
 
+def s3_object_exists(bucket_name, object_filter):
+    """
+    Return `True` if `object_filter` in `bucket_name`, otherwise `False`.
+    """
+    logger.info(
+            f's3_object_exists start: bucket_name="{bucket_name}" '
+            f'object_filter="{object_filter}"')
+    
+    s3_resource = boto3.resource('s3')
+    s3_bucket = s3_resource.Bucket(bucket_name)
+    s3_object_list = list(s3_bucket.objects.filter(Prefix=object_filter))
+    logger.info(f's3_object_exists return: s3_object_list={s3_object_list}')
+    return len(s3_object_list) > 0
+
+def s3_ls(bucket_name, object_filter):
+    """
+    Return list of objects in `bucket_name` that match `object_filter`.
+    """
+    logger.info(
+            f's3_object_ls start: bucket_name="{bucket_name}" '
+            f'object_filter="{object_filter}"')
+    
+    s3_resource = boto3.resource('s3')
+    s3_bucket = s3_resource.Bucket(bucket_name)
+    s3_objects = s3_bucket.objects.filter(Prefix=object_filter)
+    s3_object_list = []
+    for s3_object in s3_objects:
+        s3_object_list.append(s3_object.key)
+    logger.info(f's3_object_ls return: s3_bucket_list={s3_object_list}')
+    return s3_object_list
+
 def url_to_s3_object(
         source_url,
         target_bucket_name,
         target_object_name,
+        allow_overwrite=False,
         expected_checksum=None):
     """
     Copy the content of the supplied `source_url` into an object with name
@@ -25,7 +63,18 @@ def url_to_s3_object(
             f'copy_url_data_to_bucket start: source_url="{source_url}" '
             f'target_bucket_name="{target_bucket_name}" '
             f'target_object_name="{target_object_name}" '
+            f'allow_overwrite="{allow_overwrite}" '
             f'expected_checksum="{expected_checksum}"')
+
+    # Unless allow_overwrite is True, don't copy object if it already exists 
+    if not allow_overwrite:
+        logger.info(
+                f'Checking s3 object "{target_object_name}" does not already '
+                f'exist in bucket "{target_bucket_name}"')
+        if s3_object_exists(target_bucket_name, target_object_name):
+            raise ValueError(
+                    f'Copy not allowed; "{target_object_name}" already '
+                    f'exists in bucket "{target_bucket_name}"')
 
     response = requests.get(source_url, stream=True)
 
