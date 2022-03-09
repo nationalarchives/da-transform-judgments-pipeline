@@ -25,7 +25,6 @@ FROM base AS final
 
 WORKDIR /var/task
 
-COPY --from=build-env "/var/task/bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
+# COPY "bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
 
 CMD [ "AWS::UK.Gov.NationalArchives.Judgments.Api.Lambda::FunctionHandler" ]
-
