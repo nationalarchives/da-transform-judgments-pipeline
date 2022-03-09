@@ -2,6 +2,7 @@
 
 * [Creating An Example Input Message](#creating-an-example-input-message)
 * [Local Testing](#local-testing)
+* [Breaking A Bagit Archive For Testing](#breaking-a-bagit-archive-for-testing)
 
 ## Creating An Example Input Message
 
@@ -63,4 +64,27 @@ To run local code against test data in an arbitrary s3 bucket:
     "${number_of_retries}" \
     "${preshared_url_timeout}" \
     "${s3_bucket_out}"
+```
+
+## Breaking A Bagit Archive For Testing
+
+```bash
+# Unpack an existing archive
+tar -xvf "${bagit}.tar.gz"
+
+# Make a "-bad" copy
+cp -r "${bagit}" "${bagit}-bad"
+
+# Break some checksum value(s); e.g.:
+vi "${bagit}-bad/manifest-sha256.txt"
+vi "${bagit}-bad/tagmanifest-sha256.txt"
+
+# Create a new tar.gz archive:
+tar -czvf "${bagit}-bad.tar.gz" "${bagit}-bad"
+
+# Verify new archive:
+tar -tvf "${bagit}-bad.tar.gz"
+
+# Generate a new good main archive manifest (which can be broken, if required):
+shasum -a 256 "${bagit}-bad.tar.gz" > "${bagit}-bad.tar.gz.sha256"
 ```
