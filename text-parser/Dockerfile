@@ -25,6 +25,6 @@ RUN dotnet publish -o bin/Release/lambda-publish/ --no-restore
 
 FROM base AS final
 
-COPY --from=build-env "/var/task/bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
+# COPY --from=build-env "/var/task/bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
 
 CMD [ "AWS::UK.Gov.NationalArchives.Judgments.Api.Lambda::FunctionHandler" ]
