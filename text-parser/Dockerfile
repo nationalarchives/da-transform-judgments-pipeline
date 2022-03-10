@@ -9,9 +9,11 @@
 
 FROM public.ecr.aws/lambda/dotnet:5.0 AS base
 
+WORKDIR /var/task
+
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 
-WORKDIR /var/task
+WORKDIR /src
 
 COPY *.csproj ./
 
@@ -19,12 +21,14 @@ RUN dotnet restore
 
 COPY . ./
 
-FROM build-env
+FROM build-env AS publish
 
 RUN dotnet publish -o bin/Release/lambda-publish/ --no-restore
 
 FROM base AS final
 
-# COPY --from=build-env "/var/task/bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
+WORKDIR /var/task
+
+COPY --from=publish /bin/Release/lambda-publish/* ${LAMBDA_TASK_ROOT}
 
 CMD [ "AWS::UK.Gov.NationalArchives.Judgments.Api.Lambda::FunctionHandler" ]
