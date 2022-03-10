@@ -19,11 +19,11 @@ RUN dotnet restore
 
 COPY . ./
 
+FROM build-env
+
 RUN dotnet publish -o bin/Release/lambda-publish/ --no-restore
 
 FROM base AS final
-
-WORKDIR /var/task
 
 COPY "bin/Release/lambda-publish/*" ${LAMBDA_TASK_ROOT}
 
