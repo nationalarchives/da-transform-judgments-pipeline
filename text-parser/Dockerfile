@@ -15,20 +15,24 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 
 WORKDIR /src
 
-COPY *.csproj ./
-
-RUN dotnet restore
-
 COPY . ./
+
+RUN ls
+
+RUN dotnet restore AWS/AWS.csproj
+
+RUN ls
+
+# RUN dotnet build *.csproj -c Release -o /var/task
 
 FROM build-env AS publish
 
-RUN dotnet publish -o bin/Release/lambda-publish/ --no-restore
+RUN dotnet publish AWS/AWS.csproj -c Release -o /src --no-restore
 
-FROM base AS final
+FROM base AS final 
 
 WORKDIR /var/task
 
-COPY --from=publish /bin/Release/lambda-publish/* ${LAMBDA_TASK_ROOT}
+COPY --from=publish /src ${LAMBDA_TASK_ROOT}
 
 CMD [ "AWS::UK.Gov.NationalArchives.Judgments.Api.Lambda::FunctionHandler" ]
