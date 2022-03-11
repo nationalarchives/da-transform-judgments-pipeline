@@ -19,7 +19,9 @@ def get_env_var(env_var_name, must_exist=True, must_have_value=True):
     * `must_exist` is True and the variable does not exist in the environment
     * `must_have_value` is True and the length of the variable's value is 0
     """
-    logger.info('get_env_var start')
+    logger.info(
+            f'get_env_var start: env_var_name={env_var_name} '
+            f'must_exist={must_exist} must_have_value={must_have_value}')
     if must_exist and env_var_name not in os.environ:
         raise ValueError(f'Environment variable {env_var_name} not set')
     value=''

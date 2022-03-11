@@ -3,6 +3,7 @@ import logging
 import requests  # https://docs.python-requests.org/en/master/api/
 import hashlib  # https://docs.python.org/3/library/hashlib.html
 import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/index.html
+import codecs
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 READ_BLOCK_SIZE = 5 * 1024 * 1024  # s3 multipart min=5MB, except "last" part
+ENCODING_UTF8 = 'utf-8'
 
 def s3_object_exists(bucket_name, object_filter):
     """
@@ -68,13 +70,7 @@ def url_to_s3_object(
 
     # Unless allow_overwrite is True, don't copy object if it already exists 
     if not allow_overwrite:
-        logger.info(
-                f'Checking s3 object "{target_object_name}" does not already '
-                f'exist in bucket "{target_bucket_name}"')
-        if s3_object_exists(target_bucket_name, target_object_name):
-            raise ValueError(
-                    f'Copy not allowed; "{target_object_name}" already '
-                    f'exists in bucket "{target_bucket_name}"')
+        raise_error_if_object_exists(target_bucket_name, target_object_name)
 
     response = requests.get(source_url, stream=True)
 
@@ -137,3 +133,76 @@ def url_to_s3_object(
         raise e
 
     logger.info('copy_url_data_to_bucket end')
+
+def string_to_s3_object(
+        string,
+        target_bucket_name,
+        target_object_name,
+        allow_overwrite=False):
+    """
+    Copy the content of the supplied `string` into an object with name
+    `target_object_name` in bucket `target_bucket_name'.
+    """
+    logger.info(
+            f'string_to_s3_object start: string="{string}" '
+            f'target_bucket_name="{target_bucket_name}" '
+            f'target_object_name="{target_object_name}" '
+            f'allow_overwrite="{allow_overwrite}"')
+
+    # Unless allow_overwrite is True, don't copy object if it already exists 
+    if not allow_overwrite:
+        raise_error_if_object_exists(target_bucket_name, target_object_name)
+
+    s3r = boto3.resource('s3')
+    s3r.Object(target_bucket_name, target_object_name).put(Body=string)
+    logger.info('string_to_s3_object end')
+
+def raise_error_if_object_exists(bucket, object):
+    """
+    Raise a ValueError if `object` exists in `bucket`.
+    """
+    logger.info(
+            f'raise_error_if_object_exists start: checking "{object}" does '
+            f'not already exist in "{bucket}"')
+    
+    if s3_object_exists(bucket, object):
+        raise ValueError(
+                f'Copy not allowed; "{object}" already exists in bucket '
+                f'"{bucket}"')
+
+    logger.info('raise_error_if_object_exists end')
+
+def s3_object_to_dictionary(s3_bucket, s3_key, separator=':'):
+    """
+    Split each line in s3 object `s3_key' in `s3_bucket` using the left-most
+    `separator`.
+    """
+    logger.info('s3_object_to_dictionary start')
+    dictionary = {}
+    s3_client = boto3.client('s3')
+    s3o = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    reader = codecs.getreader(ENCODING_UTF8)
+    for line in reader(s3o['Body']):
+        columns = line.rstrip().split(separator, 1)
+        if len(columns) > 0:
+            key = columns[0].strip()
+            value = None if len(columns) < 2 else columns[1].strip()
+            dictionary[key] = value
+    logger.info('s3_object_to_dictionary return')
+    return dictionary
+
+def get_s3_object_presigned_url(bucket, key, expiry):
+    """
+    Return a preshared URL for `key` in `bucket` with the specified
+    `expiration` seconds.
+    """
+    logger.info(
+        f'get_s3_object_presigned_url start: bucket={bucket} '
+        f'key={key} expiry={expiry}')
+    s3c = boto3.client('s3')
+    logger.info(f'get_s3_object_presigned_url return')
+    return s3c.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket, 'Key': key},
+        ExpiresIn=expiry
+    )
