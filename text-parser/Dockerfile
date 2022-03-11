@@ -11,21 +11,25 @@ FROM public.ecr.aws/lambda/dotnet:5.0 AS base
 
 WORKDIR /var/task
 
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 
+WORKDIR /src
 
 COPY . ./
+
 RUN ls
+
 RUN dotnet restore AWS/AWS.csproj
+
 RUN ls
-
-
 
 # RUN dotnet build *.csproj -c Release -o /var/task
 
+FROM build-env AS publish
 
-RUN dotnet publish AWS/AWS.csproj -c Release -o /. --no-restore
+RUN dotnet publish AWS/AWS.csproj -c Release -o /src --no-restore
 
-
+FROM base AS final 
 
 WORKDIR /var/task
 
