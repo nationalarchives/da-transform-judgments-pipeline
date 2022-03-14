@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
 main() {
-  if [ $# -ne 7 ]; then
-    echo "Usage: parser_bucket_in bagit_path parser_bucket_out parser_path \
-consignment_reference consignment_type presigned_url_expiry_secs"
+  if [ $# -ne 5 ]; then
+    echo "Usage: parser_bucket object_root consignment_reference \
+consignment_type presigned_url_expiry_secs"
     return 1
   fi
 
-  parser_bucket_in="$1"
-  bagit_path="$2"
-  parser_bucket_out="$3"
-  parser_path="$4"
-  consignment_reference="$5"
-  consignment_type="$6"
-  presigned_url_expiry_secs="$7"
+  local parser_bucket="$1"
+  local object_root="$2"
+  local consignment_reference="$3"
+  local consignment_type="$4"
+  local presigned_url_expiry_secs="$5"
 
   export PYTHONPATH='../../lambda_functions/te-editorial-integration:../../s3_lib'
-  export S3_PARSER_INPUT_BUCKET="${parser_bucket_in}"
-  export S3_PARSER_OUTPUT_BUCKET="${parser_bucket_out}"
   export TE_PRESIGNED_URL_EXPIRY="${presigned_url_expiry_secs}"
   export TE_VERSION_JSON='{
   "int-te-version" : "1.0.0",
@@ -30,15 +26,20 @@ consignment_reference consignment_type presigned_url_expiry_secs"
 
   # event="$(create_event_json("${parser_path}"))"
   event="$(printf '{
-    "bagit-path": "%s",
-    "parser-path": "%s",
+    "s3-bucket-name": "%s",
+    "s3-object-root": "%s",
+    "consignment-reference": "%s",
     "consignment-type": "%s",
-    "consignment-reference": "%s"
+    "parsed-files": {
+        "judgement": "te_editorial_integration_test_data/parser_output/test.docx",
+        "xml": "te_editorial_integration_test_data/parser_output/test.xml",
+        "bag-it-info": "te_editorial_integration_test_data/parser_output/bag-info.txt"
+    }
 }\n' \
-    "${bagit_path}" \
-    "${parser_path}" \
-    "${consignment_type}" \
+    "${parser_bucket}" \
+    "${object_root}" \
     "${consignment_reference}" \
+    "${consignment_type}" \
 )"
 
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"

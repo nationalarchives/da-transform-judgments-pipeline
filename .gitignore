@@ -6,3 +6,4 @@ build/
 tmp-build-requirements.txt
 /tmp/
 .vscode/
+.DS_Store

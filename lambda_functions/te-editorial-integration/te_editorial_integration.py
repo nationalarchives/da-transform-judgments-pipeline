@@ -22,22 +22,21 @@ class TEEditorialIntegrationError(Exception):
     """
 
 # Get environment variable values
-env_parser_bucket_in = common_lib.get_env_var('S3_PARSER_INPUT_BUCKET', must_exist=True, must_have_value=True)
-env_parser_bucket_out = common_lib.get_env_var('S3_PARSER_OUTPUT_BUCKET', must_exist=True, must_have_value=True)
 env_version_info = json.loads(common_lib.get_env_var('TE_VERSION_JSON', must_exist=True, must_have_value=True))
 env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
 
-KEY_S3_BAGIT_PATH='bagit-path'
-KEY_S3_PARSER_PATH='parser-path'
 KEY_CONSIGNMENT_REF='consignment-reference'
 KEY_CONSIGNMENT_TYPE='consignment-type'
+KEY_S3_BUCKET='s3-bucket-name'
 KEY_S3_OBJECT_ROOT='s3-object-root'
+KEY_S3_FILES='parsed-files'
+KEY_S3_FILE_PAYLOAD='judgement'
+KEY_S3_FILE_PARSER_XML='xml'
+KEY_S3_FILE_BAG_INFO='bag-it-info'
 
 def handler(event, context):
     """
-    Given a set of parser output files at the location specified by `event`
-    field `s3-parser-location` in the s3 bucket specified by environment
-    variable `S3_INPUT_BUCKET`, this handler function will:
+    Given a set of parser output files in `event` this handler function will:
     
     * generate a JSON metadata file
     * package the JSON metadata and parser files into a `tar.gz` archive
@@ -46,9 +45,15 @@ def handler(event, context):
 
     Expected input event format:
     {
-      "bagit-path": "...",
-      "parser-path": "...",
-      "consignment-reference": "TDR-..."
+      "s3-bucket-name": "...",
+      "s3-object-root": "...",
+      "consignment-reference": "...",
+      "consignment-type": "...",
+      "parsed-files": {
+         "judgement": "---/---.docx",
+         "xml": "---/---.xml",
+         "bag-it-info": "---/---.txt"
+      }
     }
 
     SNS message format:
@@ -57,43 +62,49 @@ def handler(event, context):
       "s3-folder-url": "...",
       "consignment-type": "judgment",
       "number-of-retries": 0
-    } 
+    }
     """
     logger.info(f'handler start: event="{event}"')
     prior_attempt_count = 0
+    s3_bucket = event[KEY_S3_BUCKET]
+    s3_object_root = event[KEY_S3_OBJECT_ROOT]
     consignment_reference = event[KEY_CONSIGNMENT_REF]
     consignment_type = event[KEY_CONSIGNMENT_TYPE]
-    s3_bagit_path = event[KEY_S3_BAGIT_PATH]
-    s3_root_parser_path = event[KEY_S3_PARSER_PATH]
-    s3_output_path = f'{s3_root_parser_path}/{prior_attempt_count}'
+    s3_output_path = f'{s3_object_root}/{prior_attempt_count}'
     logger.info(
         f'prior_attempt_count="{prior_attempt_count}" '
+        f's3_bucket={s3_bucket} s3_object_root="{s3_object_root}" '
         f'consignment_reference={consignment_reference} '
         f'consignment_type={consignment_type} '
-        f's3_root_parser_path="{s3_root_parser_path}" '
         f's3_output_path="{s3_output_path}"')
     
-    # Abort if there are no input files
-    input_objects = object_lib.s3_ls(env_parser_bucket_out, s3_root_parser_path)
+    input_objects = [
+        event[KEY_S3_FILES][KEY_S3_FILE_PAYLOAD],
+        event[KEY_S3_FILES][KEY_S3_FILE_PARSER_XML],
+        event[KEY_S3_FILES][KEY_S3_FILE_BAG_INFO]
+    ]
+
     logger.info(f'input_objects={input_objects}')
-    if len(input_objects) == 0:
-        raise TEEditorialIntegrationError(
-            f'No input objects found in bucket  "{env_parser_bucket_out}" with '
-            f'prefix "{s3_root_parser_path}" (retry {prior_attempt_count})')
 
     # Abort if objects already exist at output path for current "retry" number
-    if object_lib.s3_object_exists(env_parser_bucket_out, s3_output_path):
+    if object_lib.s3_object_exists(s3_bucket, s3_output_path):
         raise TEEditorialIntegrationError(
-            f'Objects already exist in bucket "{env_parser_bucket_out}" with '
+            f'Objects already exist in bucket "{s3_bucket}" with '
             f'prefix "{s3_output_path}" (retry {prior_attempt_count})')
+
+    # Ensure the input objects exist in s3
+    for input_object in input_objects:
+        if not object_lib.s3_object_exists(s3_bucket, input_object):
+            raise TEEditorialIntegrationError(
+                f'Object "{input_object}" not found in bucket "{s3_bucket}"')
 
     output_tar_gz = f'{s3_output_path}/{consignment_reference}.tar.gz'
     logger.info(f'output_tar_gz={output_tar_gz}')
 
     # Get bagit metadata as JSON key-value pairs
-    bagit_info_s3_key = f'{s3_bagit_path}/bag-info.txt'
+    bagit_info_s3_key = event[KEY_S3_FILES][KEY_S3_FILE_BAG_INFO]
     bagit_info_dict = object_lib.s3_object_to_dictionary(
-        env_parser_bucket_in,
+        s3_bucket,
         bagit_info_s3_key)
 
     # Generate the editorial metadata content
@@ -103,7 +114,7 @@ def handler(event, context):
     editorial_metadata_s3_key = f'{s3_output_path}/te-metadata.json'
     object_lib.string_to_s3_object(
         json.dumps(editorial_metadata, indent=4),
-        env_parser_bucket_out,
+        s3_bucket,
         editorial_metadata_s3_key)
 
     # Include the metadata file in the list of files for the tar.gz file
@@ -111,14 +122,14 @@ def handler(event, context):
 
     # Write the list of s3 files to the output tar
     tar_items = tar_lib.s3_objects_to_s3_tar_gz_file(
-        env_parser_bucket_out,
+        s3_bucket,
         input_objects,
         output_tar_gz,
         f'{consignment_reference}/')
 
     # Generate a presigned URL for the output tar.gz file
     presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
-        env_parser_bucket_out,
+        s3_bucket,
         output_tar_gz,
         env_presigned_url_expiry)
 
@@ -132,7 +143,7 @@ def handler(event, context):
             'number-of-retries': prior_attempt_count
         },
         'tar-gz': {
-            'bucket': env_parser_bucket_out,
+            'bucket': s3_bucket,
             'key': output_tar_gz,
             'items': tar_items
         }
