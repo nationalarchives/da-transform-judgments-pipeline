@@ -27,7 +27,7 @@ env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', mus
 
 KEY_CONSIGNMENT_REF='consignment-reference'
 KEY_CONSIGNMENT_TYPE='consignment-type'
-KEY_S3_BUCKET='s3-bucket-name'
+KEY_S3_BUCKET='s3-bucket'
 KEY_S3_OBJECT_ROOT='s3-object-root'
 KEY_S3_FILES='parsed-files'
 KEY_S3_FILE_PAYLOAD='judgement'
@@ -45,7 +45,7 @@ def handler(event, context):
 
     Expected input event format:
     {
-      "s3-bucket-name": "...",
+      "s3-bucket": "...",
       "s3-object-root": "...",
       "consignment-reference": "...",
       "consignment-type": "...",
