@@ -16,6 +16,7 @@ logger.setLevel(logging.INFO)
 
 READ_BLOCK_SIZE = 5 * 1024 * 1024  # s3 multipart min=5MB, except "last" part
 ENCODING_UTF8 = 'utf-8'
+S3_PATH_SEPARATOR = '/'
 
 def s3_object_exists(bucket_name, object_filter):
     """
@@ -47,6 +48,35 @@ def s3_ls(bucket_name, object_filter):
         s3_object_list.append(s3_object.key)
     logger.info(f's3_object_ls return: s3_bucket_list={s3_object_list}')
     return s3_object_list
+
+def get_max_s3_subfolder(bucket_name, object_filter):
+    """
+    Find the max folder name below path `s3_object_prefix` in `s3_bucket`.
+
+    For example, given the following list of objects in s3 bucket `foo`:
+
+    * alpha/bravo/0/charlie
+    * alpha/bravo/0/delta
+    * alpha/bravo/1/echo/foxtrot
+    * golf/hotel/2/india
+
+    Calling `get_max_s3_subfolder('foo', 'alpha/bravo/)` would return `1`.
+    """
+    logger.info(
+        f'get_max_s3_subfolder start: bucket_name="{bucket_name}" '
+        f'object_filter="{object_filter}"')
+    
+    s3_resource = boto3.resource('s3')
+    s3_bucket = s3_resource.Bucket(bucket_name)
+    s3_object_list = list(s3_bucket.objects.filter(Prefix=object_filter))
+    logger.info(f's3_object_list={s3_object_list}')
+    max_s3_subfolder = None
+    if len(s3_object_list) > 0:
+        subfolders = [o.key[len(object_filter):].split(S3_PATH_SEPARATOR, 1)[0] for o in s3_object_list]
+        logger.info(f'subfolders={subfolders}')
+        max_s3_subfolder = max(subfolders)
+    logger.info(f'get_max_s3_subfolder return: max_s3_subfolder={max_s3_subfolder}')
+    return max_s3_subfolder
 
 def url_to_s3_object(
         source_url,
