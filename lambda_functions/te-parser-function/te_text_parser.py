@@ -15,12 +15,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# move to env var
-API_ENDPOINT = (
-    "https://7gwnzr88s0.execute-api.eu-west-2.amazonaws.com/default/dev-te-text-parser"
-)
-API_KEY = ""
-
+# defaults
 KEY_ERROR = "error"
 KEY_ERROR_MESSAGE = "error-message"
 KEY_S3_BUCKET = "s3-bucket"
@@ -28,8 +23,15 @@ KEY_S3_PARSER_BUCKET = "dev-te-judgment-out"
 KEY_S3_BAGIT_NAME = "s3-bagit-name"
 KEY_S3_OBJECT_ROOT = "s3-object-root"
 KEY_PARSED_FILES = "parsed-files"
-KEY_OUTPUT_MESSAGE = "output-message"
 KEY_NUM_RETRIES = "number-of-retries"
+
+# ENV VARS PRODUCTION
+KEY_S3_PARSER_BUCKET = os.environ.get("S3_PARSER_BUCKET", "dev-te-judgment-out")
+API_ENDPOINT = os.environ.get(
+    "API_ENDPOINT",
+    "https://7gwnzr88s0.execute-api.eu-west-2.amazonaws.com/default/dev-te-text-parser",
+)
+# API_KEY = ""
 
 
 def handler(event, context):
@@ -46,25 +48,25 @@ def handler(event, context):
     event = {
         "error": False,
         "s3-bucket": "dev-te-temp",
-        "s3-object-root": "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L",
-        "s3-bagit-name": "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L.tar.gz",
+        "s3-object-root": "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L",
+        "s3-bagit-name": "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L.tar.gz",
         "validated-files": {
-            "path": "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L",
+            "path": "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L",
             "root": [
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/bag-info.txt",
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/manifest-sha256.txt",
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/bagit.txt",
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/file-ffid.csv",
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/file-metadata.csv",
-                "consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/file-av.csv",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/bag-info.txt",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/manifest-sha256.txt",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/bagit.txt",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/file-ffid.csv",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/file-metadata.csv",
+                "consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/file-av.csv",
             ],
-            "data": ["consignments/judgement/TDR-2021-CF6L/0/TDR-2021-CF6L/data/test.docx"],
+            "data": ["consignments/judgment/TDR-2021-CF6L/0/TDR-2021-CF6L/data/test.docx"],
         },
         "output-message": {
             "consignment-reference": "TDR-2021-CF6L",
             "s3-bagit-url": "",
             "s3-sha-url": "",
-            "consignment-type": "judgement",
+            "consignment-type": "judgment",
             "number-of-retries": 0,
         },
     }
@@ -83,8 +85,8 @@ def handler(event, context):
         "parsed-files": {
             "xml": "consignments/.../.../1/...",
             "meta": ["consignments/.../.../1/.../bag-info.txt", ... ],
-            "bag-it-info": ["consignments/.../.../1/.../data/doc.docx", ...]
-            "judgement: [""]
+            "bagit-info": ["consignments/.../.../1/.../data/doc.docx", ...]
+            "judgment: [""]
         }
     }
 
@@ -99,18 +101,14 @@ def handler(event, context):
         KEY_S3_OBJECT_ROOT: None,
         KEY_S3_BAGIT_NAME: None,
         KEY_PARSED_FILES: {},
-        KEY_OUTPUT_MESSAGE: None,
     }
 
     try:
         # Get input parameters
         s3_bucket = event["s3-bucket"]
-        output[KEY_S3_BUCKET] = s3_bucket
         s3_bagit_name = event["s3-bagit-name"]
         logger.info(f's3_bucket="{s3_bucket}" s3_bagit_name="{s3_bagit_name}"')
         output[KEY_S3_BAGIT_NAME] = s3_bagit_name
-        # Forward prior output-message
-        output[KEY_OUTPUT_MESSAGE] = event[KEY_OUTPUT_MESSAGE].copy()
 
         # get document from s3
         S3 = boto3.client("s3")
@@ -121,9 +119,12 @@ def handler(event, context):
 
         # encode body to base64
         encoded = base64.b64encode(document).decode("utf-8")
+        path = event.get("validated-files").get("data")[0]
+        filename = os.path.basename(path)
+
         data = {
             "content": encoded,
-            "filename": "test_valid_judgment.docx",
+            "filename": filename,
         }
 
         # send request to parser
@@ -136,43 +137,35 @@ def handler(event, context):
 
         output_obj = {
             "xml": response_json.get("xml", None),
-            "meta": {
-                "uri": response_json.get("meta").get("uri", None),
-                "court": response_json.get("meta").get("court", None),
-                "cite": response_json.get("meta").get("cite", None),
-                "date": response_json.get("meta").get("date", None),
-                "name": response_json.get("meta").get("name", None),
-                "attachments": response_json.get("meta").get("attachments", None),
-            },
+            "meta": response_json.get("meta", None),
             "images": response_json.get("images", None),
         }
 
-        os.mkdir("tmp")
         # xml
         with open(
-            f'tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml', "w"
+            f'/tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml', "w"
         ) as xml_file:
             xml_file.write(output_obj["xml"])
-            object_key = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
+            object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
             S3.upload_file(
-                f'tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml',
+                f'/tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml',
                 KEY_S3_PARSER_BUCKET,
                 object_key,
             )
 
         # meta
-        with open(
-            f'tmp/{event["output-message"]["consignment-reference"]}-te-meta.json', "w"
-        ) as json_file:
-            json_file.write(json.dumps(output_obj["meta"]))
-            object_key = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
-            S3.upload_file(
-                f'tmp/{event["output-message"]["consignment-reference"]}-te-meta.json',
-                KEY_S3_PARSER_BUCKET,
-                object_key,
-            )
+        logger.info(output_obj["meta"])
+        log = json.dumps(output_obj["meta"]).encode()
+        object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
+        bucket = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
+        bucket.upload_file(
+            f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json',
+            object_key,
+        )
+        obj = S3_resource.Object(KEY_S3_PARSER_BUCKET, object_key)
+        response = obj.put(Body=log)
 
-        #  judgement
+        #  judgment
         source = {
             "Bucket": s3_bucket,
             "Key": event.get("validated-files").get("data")[0],
@@ -180,7 +173,7 @@ def handler(event, context):
         dest = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
         dest.copy(
             source,
-            f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgment.docx",
+            f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgment.docx",
         )
 
         # bagit-info
@@ -191,29 +184,31 @@ def handler(event, context):
         dest = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
         dest.copy(
             source,
-            f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/bagit-info.txt",
+            f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/bagit-info.txt",
         )
 
         # place xml, meta json, bag it info in output message
         output["consignment-reference"] = event["output-message"][
             "consignment-reference"
         ]
+        output["consignment-type"] = event["output-message"]["consignment-type"]
+        output[KEY_S3_BUCKET] = KEY_S3_PARSER_BUCKET
         output[
             "s3-object-root"
-        ] = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}"
         output["s3-parser-bucket"] = KEY_S3_PARSER_BUCKET
         output[KEY_PARSED_FILES][
             "xml"
-        ] = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
         output[KEY_PARSED_FILES][
-            "judgement"
-        ] = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgement.docx"
+            "judgment"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgment.docx"
         output[KEY_PARSED_FILES][
             "meta"
-        ] = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
         output[KEY_PARSED_FILES][
             "bagit-info"
-        ] = f"parsed/judgement/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/bagit-info.txt"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/bagit-info.txt"
 
     except Exception as e:
         output[KEY_ERROR] = True
@@ -222,3 +217,25 @@ def handler(event, context):
 
     logger.info("handler return")
     return output
+
+
+def retrieve_judgment_meta():
+    '''function to retrieve the meta for a judgement
+    '''
+    pass
+
+def parse_judgment():
+    "function to send a judgment to be parsed"
+    pass
+
+def copy_from_bucket():
+    '''
+    function to copy a file from one bucket to another bucket
+    '''
+    pass
+
+def create_output_message(bucket=None, consignment_type=None, consignment_reference=None, retry_count=None):
+    '''
+    function to create an output message to be returned to editorial team
+    '''
+    pass
