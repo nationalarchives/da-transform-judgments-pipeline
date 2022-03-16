@@ -30,9 +30,10 @@ KEY_CONSIGNMENT_TYPE='consignment-type'
 KEY_S3_BUCKET='s3-bucket'
 KEY_S3_OBJECT_ROOT='s3-object-root'
 KEY_S3_FILES='parsed-files'
-KEY_S3_FILE_PAYLOAD='judgement'
+KEY_S3_FILE_PAYLOAD='judgment'
 KEY_S3_FILE_PARSER_XML='xml'
-KEY_S3_FILE_BAG_INFO='bag-it-info'
+KEY_S3_FILE_PARSER_META_JSON='meta'
+KEY_S3_FILE_BAG_INFO='bagit-info'
 
 def handler(event, context):
     """
@@ -52,7 +53,8 @@ def handler(event, context):
       "parsed-files": {
          "judgement": "---/---.docx",
          "xml": "---/---.xml",
-         "bag-it-info": "---/---.txt"
+         "meta": "---/---.json",
+         "bagit-info": "---/---.txt"
       }
     }
 
@@ -81,6 +83,7 @@ def handler(event, context):
     input_objects = [
         event[KEY_S3_FILES][KEY_S3_FILE_PAYLOAD],
         event[KEY_S3_FILES][KEY_S3_FILE_PARSER_XML],
+        event[KEY_S3_FILES][KEY_S3_FILE_PARSER_META_JSON],
         event[KEY_S3_FILES][KEY_S3_FILE_BAG_INFO]
     ]
 
