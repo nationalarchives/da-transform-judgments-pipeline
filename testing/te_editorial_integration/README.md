@@ -21,7 +21,7 @@ To run step `te-editorial-integration`:
     value is used for the `s3_bucket` variable):
 
     ```bash
-    s3_bucket='dgandy-tna-out'
+    s3_bucket=
     consignment_reference='ABC-123'
     consignment_type='judgment'
     number_of_retries='0'

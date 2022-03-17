@@ -16,8 +16,6 @@ number_of_retries presigned_url_expiry_secs"
 
   export S3_BUCKET="${parser_bucket}"
   export S3_OBJECT_ROOT='te_editorial_integration_test_data/parser_output/'
-  export S3_FILE_PAYLOAD='test.docx'
-  export S3_FILE_PARSER_XML='test.xml'
   export S3_FILE_PARSER_META='test.log'
   export S3_FILE_BAGIT_INFO='bag-info.txt'
   export TE_PRESIGNED_URL_EXPIRY="${presigned_url_expiry_secs}"

@@ -26,14 +26,15 @@ env_version_info = json.loads(common_lib.get_env_var('TE_VERSION_JSON', must_exi
 env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
 env_s3_bucket = common_lib.get_env_var('S3_BUCKET', must_exist=True, must_have_value=True)
 env_s3_object_root = common_lib.get_env_var('S3_OBJECT_ROOT', must_exist=True, must_have_value=True)
-env_s3_file_payload = common_lib.get_env_var('S3_FILE_PAYLOAD', must_exist=True, must_have_value=True)
-env_s3_file_parser_xml = common_lib.get_env_var('S3_FILE_PARSER_XML', must_exist=True, must_have_value=True)
 env_s3_file_parser_meta = common_lib.get_env_var('S3_FILE_PARSER_META', must_exist=True, must_have_value=True)
 env_s3_file_bagit_info = common_lib.get_env_var('S3_FILE_BAGIT_INFO', must_exist=True, must_have_value=True)
 
 KEY_CONSIGNMENT_REF='consignment-reference'
 KEY_CONSIGNMENT_TYPE='consignment-type'
 KEY_PRIOR_ATTEMPT_COUNT='number-of-retries'
+FILE_EXT_DOCX='.docx'
+FILE_EXT_XML='.xml'
+TE_PREFIX='TRE-'
 
 def handler(event, context):
     """
@@ -90,9 +91,8 @@ def handler(event, context):
         f's3_output_path="{s3_output_path}"')
     
     input_objects = [
-        f'{s3_input_path}/{env_s3_file_payload}',
-        f'{s3_input_path}/{env_s3_file_parser_xml}',
-        f'{s3_input_path}/{env_s3_file_parser_meta}'
+        f'{s3_input_path}/{env_s3_file_parser_meta}',
+        f'{s3_input_path}/{consignment_reference}{FILE_EXT_XML}'
     ]
 
     logger.info(f'input_objects={input_objects}')
@@ -116,14 +116,20 @@ def handler(event, context):
             f'Objects already exist in bucket "{env_s3_bucket}" with '
             f'prefix "{s3_output_path}" (retry {prior_attempt_count})')
 
-    # Ensure the input objects exist in s3
+    # Ensure any statically defined input objects exist in s3
     for input_object in input_objects:
         if not object_lib.s3_object_exists(env_s3_bucket, input_object):
             raise TEEditorialIntegrationError(
                 f'Object "{input_object}" not found in bucket "{env_s3_bucket}"')
 
-    output_tar_gz = f'{s3_output_path}/{consignment_reference}.tar.gz'
-    logger.info(f'output_tar_gz={output_tar_gz}')
+    # Add .docx files to input list
+    input_file_prefix = f'{s3_input_path}/'
+    documents = get_documents(env_s3_bucket, input_file_prefix)
+    if len(documents) == 0:
+        raise TEEditorialIntegrationError(
+            f'Did not find any files with extension "{FILE_EXT_DOCX}" in '
+            f'bucket {env_s3_bucket} using filter {input_file_prefix}')
+    input_objects.extend(documents)
 
     # Get Bagit metadata as JSON key-value pairs
     bagit_info_s3_key = f'{s3_input_path}/{env_s3_file_bagit_info}'
@@ -145,6 +151,8 @@ def handler(event, context):
     input_objects.append(editorial_metadata_s3_key)
 
     # Write the list of s3 files to the output tar
+    output_tar_gz = f'{s3_output_path}/{TE_PREFIX}{consignment_reference}.tar.gz'
+    logger.info(f'output_tar_gz={output_tar_gz}')
     tar_items = tar_lib.s3_objects_to_s3_tar_gz_file(
         env_s3_bucket,
         input_objects,
@@ -188,6 +196,7 @@ def validate_input(event):
     """
     Raise an error if required input fields are missing.
     """
+    logger.info('validate_input start')
     missing_input_list = []
     if not KEY_CONSIGNMENT_REF in event:
         missing_input_list.append(KEY_CONSIGNMENT_REF)
@@ -196,3 +205,20 @@ def validate_input(event):
     if len(missing_input_list) > 0:
         raise TEEditorialIntegrationError(
             f'Missing mandatory inputs: {missing_input_list}')
+    logger.info('validate_input end')
+
+def get_documents(s3_bucket, path):
+    """
+    Return a list of objects from s3 location with extension `.docx`.
+    """
+    logger.info('get_documents start')
+    documents = []
+    s3_object_list = object_lib.s3_ls(s3_bucket, path)
+    logger.info(f's3_object_list={s3_object_list}')
+    for s3_object in s3_object_list:
+        if s3_object.endswith(FILE_EXT_DOCX):
+            logger.info(f'located input file: {s3_object} in {env_s3_bucket}')
+            documents.append(s3_object)
+    
+    logger.info('get_documents return')
+    return documents
