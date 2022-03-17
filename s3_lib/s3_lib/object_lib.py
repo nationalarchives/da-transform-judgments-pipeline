@@ -49,34 +49,38 @@ def s3_ls(bucket_name, object_filter):
     logger.info(f's3_object_ls return: s3_bucket_list={s3_object_list}')
     return s3_object_list
 
-def get_max_s3_subfolder(bucket_name, object_filter):
+def get_max_s3_subfolder_number(bucket_name, object_filter):
     """
-    Find the max folder name below path `s3_object_prefix` in `s3_bucket`.
+    Return the max numeric folder name below path `s3_object_prefix` in
+    `s3_bucket`, or `None` if no numeric child folders are found.
 
-    For example, given the following list of objects in s3 bucket `foo`:
+    For example, given the following list of objects in s3 bucket `foo`,
+    `get_max_s3_subfolder_number('foo', 'alpha/bravo/)` would return `1`:
 
     * alpha/bravo/0/charlie
     * alpha/bravo/0/delta
     * alpha/bravo/1/echo/foxtrot
-    * golf/hotel/2/india
+    * alpha/bravo/golf/hotel
+    * india/juliet/kilo/lima
 
-    Calling `get_max_s3_subfolder('foo', 'alpha/bravo/)` would return `1`.
+    Calling 
     """
     logger.info(
-        f'get_max_s3_subfolder start: bucket_name="{bucket_name}" '
+        f'get_max_s3_subfolder_number start: bucket_name="{bucket_name}" '
         f'object_filter="{object_filter}"')
     
     s3_resource = boto3.resource('s3')
     s3_bucket = s3_resource.Bucket(bucket_name)
     s3_object_list = list(s3_bucket.objects.filter(Prefix=object_filter))
     logger.info(f's3_object_list={s3_object_list}')
-    max_s3_subfolder = None
-    if len(s3_object_list) > 0:
-        subfolders = [o.key[len(object_filter):].split(S3_PATH_SEPARATOR, 1)[0] for o in s3_object_list]
-        logger.info(f'subfolders={subfolders}')
-        max_s3_subfolder = max(subfolders)
-    logger.info(f'get_max_s3_subfolder return: max_s3_subfolder={max_s3_subfolder}')
-    return max_s3_subfolder
+    numeric_subfolders = [
+        o.key[len(object_filter):].split(S3_PATH_SEPARATOR, 1)[0]
+        for o in s3_object_list
+        if o.key[len(object_filter):].split(S3_PATH_SEPARATOR, 1)[0].isdigit()
+    ]
+    logger.info(f'numeric_subfolders={numeric_subfolders}')
+    logger.info(f'get_max_s3_subfolder_number return: numeric_subfolders={numeric_subfolders}')
+    return max(numeric_subfolders) if len(numeric_subfolders) > 0 else None
 
 def url_to_s3_object(
         source_url,
@@ -207,7 +211,7 @@ def s3_object_to_dictionary(s3_bucket, s3_key, separator=':'):
     Split each line in s3 object `s3_key' in `s3_bucket` using the left-most
     `separator`.
     """
-    logger.info('s3_object_to_dictionary start')
+    logger.info(f's3_object_to_dictionary start: s3_bucket={s3_bucket} s3_key={s3_key}')
     dictionary = {}
     s3_client = boto3.client('s3')
     s3o = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
