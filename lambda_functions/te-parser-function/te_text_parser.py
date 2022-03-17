@@ -154,16 +154,18 @@ def handler(event, context):
             )
 
         # meta
-        logger.info(output_obj["meta"])
-        log = json.dumps(output_obj["meta"]).encode()
-        object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
-        bucket = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
-        bucket.upload_file(
-            f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json',
-            object_key,
-        )
-        obj = S3_resource.Object(KEY_S3_PARSER_BUCKET, object_key)
-        response = obj.put(Body=log)
+        with open(f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json', "w") as json_file:
+            logger.info(output_obj["meta"])
+            json_file.write(json.dumps(output_obj["meta"]))
+            log = json.dumps(output_obj["meta"]).encode()
+            object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
+            bucket = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
+            bucket.upload_file(
+                f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json',
+                object_key,
+            )
+            obj = S3_resource.Object(KEY_S3_PARSER_BUCKET, object_key)
+            response = obj.put(Body=log)
 
         #  judgment
         source = {
