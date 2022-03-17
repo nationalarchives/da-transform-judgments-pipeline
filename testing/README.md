@@ -1,8 +1,32 @@
 # Testing
 
-* [Creating An Example Input Message](#creating-an-example-input-message)
-* [Local Testing](#local-testing)
-* [Breaking A Bagit Archive For Testing](#breaking-a-bagit-archive-for-testing)
+* [Testing Code Deployed To AWS](#testing-code-deployed-to-aws)
+* [Testing Code Locally](#testing-code-locally)
+* [Appendices](#appendices)
+    * [Creating An Example Input Message](#creating-an-example-input-message)
+    * [Breaking A Bagit Archive For Testing](#breaking-a-bagit-archive-for-testing)
+
+# Testing Code Deployed To AWS
+
+1. Copy a Bagit `.tar.gz` file and a corresponding `.tar.gz.sha256` file to an
+    arbitrary s3 location
+    > To test checksum validation failure see
+        [Breaking A Bagit Archive For Testing](#breaking-a-bagit-archive-for-testing)
+        below
+2. Generate an input JSON message for the above files; see
+    [Creating An Example Input Message](#creating-an-example-input-message)
+    below
+3. Submit the generated JSON message to your environment's respective input
+    queue (e.g. `non-prod` `dev-te-tdr-in`)
+4. Observe execution in the AWS console at `Step Functions -> State machines`
+    for the environment being tested (e.g. `non-prod` `dev-te-state-machine`)
+
+# Testing Code Locally
+
+* [te_editorial_integration/README.md](te_editorial_integration/README.md)
+* [te_bagit_then_files/README.md](te_bagit_then_files/README.md)
+
+# Appendices
 
 ## Creating An Example Input Message
 
@@ -10,8 +34,8 @@ The pipeline's input is a JSON payload that includes pre-shared URLs for the
 input files it will process.
 
 To create an example JSON payload, with new temporary pre-shared URLs for the
-s3 input files, run the following script with at least the s3 bucket and
-object names passed as arguments:
+s3 input files, run the following script with at least the s3 bucket and input
+object names (Bagit `tar.gz` and `tar.gz.sha256` files) passed as arguments:
 
 * [./create_preshared_url_msg.sh](./create_preshared_url_msg.sh)
 
@@ -48,22 +72,6 @@ Example output:
     "consignment-type": "...",
     "number-of-retries": 0
 }
-```
-
-## Local Testing
-
-To run local code against test data in an arbitrary s3 bucket:
-
-```bash
-./test-steps-bagit-then-files.sh \
-    "${s3_bucket_in}" \
-    "${s3_key_bagit}" \
-    "${s3_key_manifest}" \
-    "${consignment_reference}" \
-    "${consignment_type}" \
-    "${number_of_retries}" \
-    "${preshared_url_timeout}" \
-    "${s3_bucket_out}"
 ```
 
 ## Breaking A Bagit Archive For Testing
