@@ -65,7 +65,8 @@ def handler(event, context):
     }
     """
     logger.info(f'handler start: event="{event}"')
-    prior_attempt_count = int(event(KEY_PRIOR_ATTEMPT_COUNT)) if KEY_PRIOR_ATTEMPT_COUNT in event else 0                                                                                                                                                                                                                                                                                                                            
+    validate_input(event)
+    prior_attempt_count = int(event[KEY_PRIOR_ATTEMPT_COUNT]) if KEY_PRIOR_ATTEMPT_COUNT in event else 0                                                                                                                                                                                                                                                                                                                            
     consignment_reference = event[KEY_CONSIGNMENT_REF]
     consignment_type = event[KEY_CONSIGNMENT_TYPE]
     
@@ -97,9 +98,11 @@ def handler(event, context):
     logger.info(f'input_objects={input_objects}')
 
     # Get latest used editorial retry number, from s3 (may be None):
-    prior_ed_attempt_root = f'{s3_object_latest_tdr_root}{prior_attempt_count}/'
-    prior_ed_attempt_count = object_lib.get_max_s3_subfolder_number(env_s3_bucket, prior_ed_attempt_root)
-    expected_editorial_attempt = 0 if prior_ed_attempt_count is None else 1 + int(prior_ed_attempt_count)
+    prior_ed_attempts_root = f'{s3_object_latest_tdr_root}{latest_tdr_retry}/'
+    logger.info(f'prior_ed_attempts_root={prior_ed_attempts_root}')
+    prior_ed_attempt_latest = object_lib.get_max_s3_subfolder_number(env_s3_bucket, prior_ed_attempts_root)
+    expected_editorial_attempt = 0 if prior_ed_attempt_latest is None else 1 + int(prior_ed_attempt_latest)
+    logger.info(f'prior_ed_attempt_latest={prior_ed_attempt_latest} expected_editorial_attempt={expected_editorial_attempt}')
 
     # Abort if not the expected attempt count
     if prior_attempt_count != expected_editorial_attempt:
@@ -180,3 +183,16 @@ def format_editorial_metadata(bagit_info, version_info):
     output['bagit-info'] = bagit_info
     logger.info(f'create_editorial_metadata_file return: output={output}')
     return output
+
+def validate_input(event):
+    """
+    Raise an error if required input fields are missing.
+    """
+    missing_input_list = []
+    if not KEY_CONSIGNMENT_REF in event:
+        missing_input_list.append(KEY_CONSIGNMENT_REF)
+    if not KEY_CONSIGNMENT_TYPE in event:
+        missing_input_list.append(KEY_CONSIGNMENT_TYPE)
+    if len(missing_input_list) > 0:
+        raise TEEditorialIntegrationError(
+            f'Missing mandatory inputs: {missing_input_list}')

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 main() {
-  if [ $# -ne 4 ]; then
+  if [ $# -ne 5 ]; then
     echo "Usage: parser_bucket consignment_reference consignment_type \
-presigned_url_expiry_secs"
+number_of_retries presigned_url_expiry_secs"
     return 1
   fi
 
   local parser_bucket="$1"
   local consignment_reference="$2"
   local consignment_type="$3"
-  local presigned_url_expiry_secs="$4"
+  local number_of_retries="$4"
+  local presigned_url_expiry_secs="$5"
 
   export PYTHONPATH='../../lambda_functions/te-editorial-integration:../../s3_lib'
 
@@ -30,13 +31,26 @@ presigned_url_expiry_secs"
   ]
 }'
 
-  event="$(printf '{
-    "consignment-reference": "%s",
-    "consignment-type": "%s"
+  local event
+  if [ -z "${number_of_retries}" ]; then
+    event="$(printf '{
+      "consignment-reference": "%s",
+      "consignment-type": "%s"
 }\n' \
-    "${consignment_reference}" \
-    "${consignment_type}" \
+      "${consignment_reference}" \
+      "${consignment_type}" \
 )"
+  else
+    event="$(printf '{
+      "consignment-reference": "%s",
+      "consignment-type": "%s",
+      "number-of-retries": "%s"
+}\n' \
+      "${consignment_reference}" \
+      "${consignment_type}" \
+      "${number_of_retries}" \
+)"
+  fi
 
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
   python3 test_step_editorial_int.py "${event}"
