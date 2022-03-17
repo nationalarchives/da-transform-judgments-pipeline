@@ -146,7 +146,7 @@ def handler(event, context):
             f'/tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml', "w"
         ) as xml_file:
             xml_file.write(output_obj["xml"])
-            object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
+            object_key = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{event['output-message']['consignment-reference']}.xml"
             S3.upload_file(
                 f'/tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml',
                 KEY_S3_PARSER_BUCKET,
@@ -175,7 +175,7 @@ def handler(event, context):
         dest = S3_resource.Bucket(KEY_S3_PARSER_BUCKET)
         dest.copy(
             source,
-            f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgment.docx",
+            f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{filename}",
         )
 
         # bagit-info
@@ -201,10 +201,10 @@ def handler(event, context):
         output["s3-parser-bucket"] = KEY_S3_PARSER_BUCKET
         output[KEY_PARSED_FILES][
             "xml"
-        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-xml.xml"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}.xml"
         output[KEY_PARSED_FILES][
             "judgment"
-        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/judgment.docx"
+        ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{filename}"
         output[KEY_PARSED_FILES][
             "meta"
         ] = f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/te-meta.json"
