@@ -141,6 +141,9 @@ def handler(event, context):
             "images": response_json.get("images", None),
         }
 
+        logger.info("Received response from parser:", output_obj)
+
+        logger.info("Creating XML")
         # xml
         with open(
             f'/tmp/{event["output-message"]["consignment-reference"]}-te-xml.xml', "w"
@@ -153,6 +156,7 @@ def handler(event, context):
                 object_key,
             )
 
+        logger.info("Creating META JSON File")
         # meta
         with open(f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json', "w") as json_file:
             logger.info(output_obj["meta"])
@@ -167,6 +171,7 @@ def handler(event, context):
             obj = S3_resource.Object(KEY_S3_PARSER_BUCKET, object_key)
             response = obj.put(Body=log)
 
+        logger.info(f"Copying Judgement into parser out bucket: {KEY_S3_PARSER_BUCKET}")
         #  judgment
         source = {
             "Bucket": s3_bucket,
@@ -178,6 +183,7 @@ def handler(event, context):
             f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{filename}",
         )
 
+        logger.info(f"Copying Bagit Info into parser out butkcet: {KEY_S3_PARSER_BUCKET}")
         # bagit-info
         source = {
             "Bucket": s3_bucket,
@@ -188,6 +194,8 @@ def handler(event, context):
             source,
             f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/bagit-info.txt",
         )
+
+        logger.info("Successfully parsed judgement.")
 
         # place xml, meta json, bag it info in output message
         output["consignment-reference"] = event["output-message"][
