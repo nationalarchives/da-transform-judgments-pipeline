@@ -158,7 +158,9 @@ def handler(event, context):
 
         logger.info("Creating META JSON File")
         # meta
-        with open(f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json', "w") as json_file:
+        with open(
+            f'/tmp/{event["output-message"]["consignment-reference"]}-te-meta.json', "w"
+        ) as json_file:
             logger.info(output_obj["meta"])
             json_file.write(json.dumps(output_obj["meta"]))
             log = json.dumps(output_obj["meta"]).encode()
@@ -183,7 +185,9 @@ def handler(event, context):
             f"parsed/{event['output-message']['consignment-type']}/{event['output-message']['consignment-reference']}/{event['output-message']['number-of-retries']}/{filename}",
         )
 
-        logger.info(f"Copying Bagit Info into parser out butkcet: {KEY_S3_PARSER_BUCKET}")
+        logger.info(
+            f"Copying Bagit Info into parser out butkcet: {KEY_S3_PARSER_BUCKET}"
+        )
         # bagit-info
         source = {
             "Bucket": s3_bucket,
