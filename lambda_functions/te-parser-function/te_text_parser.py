@@ -227,25 +227,3 @@ def handler(event, context):
 
     logger.info("handler return")
     return output
-
-
-def retrieve_judgment_meta():
-    '''function to retrieve the meta for a judgement
-    '''
-    pass
-
-def parse_judgment():
-    "function to send a judgment to be parsed"
-    pass
-
-def copy_from_bucket():
-    '''
-    function to copy a file from one bucket to another bucket
-    '''
-    pass
-
-def create_output_message(bucket=None, consignment_type=None, consignment_reference=None, retry_count=None):
-    '''
-    function to create an output message to be returned to editorial team
-    '''
-    pass
