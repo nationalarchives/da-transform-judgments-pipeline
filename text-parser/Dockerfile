@@ -19,7 +19,7 @@ COPY . ./
 
 RUN ls
 
-RUN dotnet restore TRE/TRE.csproj
+RUN dotnet restore AWS/AWS.csproj
 
 RUN ls
 
@@ -27,7 +27,7 @@ RUN ls
 
 FROM build-env AS publish
 
-RUN dotnet publish TRE/TRE.csproj -c Release -o /src --no-restore
+RUN dotnet publish AWS/AWS.csproj -c Release -o /src --no-restore
 
 FROM base AS final 
 
@@ -35,4 +35,4 @@ WORKDIR /var/task
 
 COPY --from=publish /src ${LAMBDA_TASK_ROOT}
 
-CMD [ "TRE::UK.Gov.NationalArchives.CaseLaw.TRE::FunctionHandler" ]
+CMD [ "AWS::UK.Gov.NationalArchives.Judgments.Api.Lambda::FunctionHandler" ]
