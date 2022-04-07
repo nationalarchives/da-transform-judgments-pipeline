@@ -1,0 +1,12 @@
+Consignment-Type: judgment
+Bag-Creator: TDRExportv0.0.29
+Consignment-Start-Datetime: 1970-01-01T00:00:00Z
+Consignment-Series: 
+Source-Organization: Alpha
+Contact-Name: Bravo
+Internal-Sender-Identifier: Charlie
+Consignment-Completed-Datetime: 1970-01-01T00:00:01Z
+Consignment-Export-Datetime: 1970-01-01T00:00:02Z
+Contact-Email: delta@echo.foxtrot
+Payload-Oxum: 65432.1
+Bagging-Date: 1970-01-01
