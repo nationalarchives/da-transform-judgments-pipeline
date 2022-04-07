@@ -31,7 +31,6 @@ API_ENDPOINT = os.environ.get(
     "API_ENDPOINT",
     "https://7gwnzr88s0.execute-api.eu-west-2.amazonaws.com/default/dev-te-text-parser",
 )
-# API_KEY = ""
 
 
 def handler(event, context):
@@ -127,7 +126,7 @@ def handler(event, context):
             "filename": filename,
         }
 
-        # send request to parser
+        # send request to parser with presigned url
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         response = requests.request(
             "POST", API_ENDPOINT, headers=headers, data=json.dumps(data)
@@ -186,7 +185,7 @@ def handler(event, context):
         )
 
         logger.info(
-            f"Copying Bagit Info into parser out butkcet: {KEY_S3_PARSER_BUCKET}"
+            f"Copying Bagit Info into parser out bucket: {KEY_S3_PARSER_BUCKET}"
         )
         # bagit-info
         source = {
