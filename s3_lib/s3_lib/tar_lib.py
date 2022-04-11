@@ -4,6 +4,7 @@ import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/referenc
 import tarfile  # https://docs.python.org/3/library/tarfile.html
 import io
 import os
+from s3_lib import common_lib
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -91,7 +92,13 @@ def s3_objects_to_s3_tar_gz_file(
         for s3_object_name in s3_object_names:
             object_name = f'{tar_internal_prefix}{os.path.basename(s3_object_name)}'
             logger.info(f's3_object_name={s3_object_name} object_name={object_name}')
-            s3_object = s3_client.get_object(Bucket=s3_bucket_in, Key=s3_object_name)
+            try:
+                s3_object = s3_client.get_object(Bucket=s3_bucket_in, Key=s3_object_name)
+            except s3_client.exceptions.NoSuchKey as e:
+                logger.error(str(e))
+                raise common_lib.S3LibError(
+                        f'Unable to find key "{s3_object_name}" in '
+                        f'bucket "{s3_bucket_in}". {str(e)}')
             # Determine file name inside tar, and its size
             tar_info = tarfile.TarInfo(object_name)
             tar_info.size = s3_object['ContentLength']
