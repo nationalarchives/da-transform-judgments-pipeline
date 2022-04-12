@@ -123,7 +123,7 @@ def handler(event, context):
 
     raise TEEditorialIntegrationError(
         'Invalid input event; expected list (from parser) or '
-        'dictionary (for from retry)')
+        'dictionary (from retry)')
 
 class ParserHandler:
     """
