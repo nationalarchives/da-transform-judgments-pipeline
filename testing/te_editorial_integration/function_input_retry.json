@@ -1,0 +1,5 @@
+{
+  "consignment-reference": "${consignment_reference}",
+  "consignment-type": "${consignment_type}",
+  "number-of-retries": "${number_of_retries}"
+}
