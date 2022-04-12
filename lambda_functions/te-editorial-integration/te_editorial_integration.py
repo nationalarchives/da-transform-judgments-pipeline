@@ -420,7 +420,9 @@ class RetryHandler:
 
     def process(self):
         """
-        TODO
+        Return new output message with regenerated presigned URL and updated
+        number-of-retries field values. Save a copy of the message in case
+        subsequent retries are received.
         """
         logger.info('process start')
 
