@@ -469,8 +469,9 @@ class RetryHandler:
             key=output_message[KEY_TAR_GZ][KEY_KEY],
             expiry=env_presigned_url_expiry)
 
-        # Update output message with new presigned URL
+        # Update output message with new presigned URL and retry counter
         output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_URL] = presigned_tar_gz_url
+        output_message[KEY_EDITORIAL_OUTPUT][KEY_NUMBER_OF_RETRIES] = expected_ed_retry
 
         # Save new output message (for any subsequent retries to update again)
         output_key = ed_root + str(expected_ed_retry) + S3_SEP + OUTPUT_MESSAGE_FILE
