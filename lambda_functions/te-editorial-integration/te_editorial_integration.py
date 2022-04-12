@@ -29,7 +29,7 @@ env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', mus
 
 KEY_CONTEXT = 'context'
 KEY_NUMBER_OF_RETRIES='number-of-retries'
-KEY_BAG_INFO = 's3-bagit-name'
+KEY_BAG_INFO = 'bag-info-txt'
 KEY_JUDGMENT_DOC = 'judgment-document'
 KEY_CONSIGNMENT_TYPE = 'consignment-type'
 
@@ -472,7 +472,7 @@ class RetryHandler:
         # Update output message with new presigned URL
         output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_URL] = presigned_tar_gz_url
 
-        # Save new output message (for any subsequent retries)
+        # Save new output message (for any subsequent retries to update again)
         output_key = ed_root + str(expected_ed_retry) + S3_SEP + OUTPUT_MESSAGE_FILE
         object_lib.string_to_s3_object(
             string=json.dumps(output_message),
