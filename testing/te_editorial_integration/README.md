@@ -3,7 +3,7 @@
 To run step `te-editorial-integration`:
 
 1. Enable a Python virtual environment; e.g. if this is configured at the
-    project's root use:
+    project's root (e.g. with `python3 -m venv .venv`) use:
 
     ```bash
     . ../../.venv/bin/activate
