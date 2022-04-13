@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import logging
-from multiprocessing.sharedctypes import Value
 from s3_lib import common_lib
 from s3_lib import object_lib
 from s3_lib import tar_lib
