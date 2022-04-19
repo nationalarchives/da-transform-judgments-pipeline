@@ -83,7 +83,7 @@ def handler(event, context):
             },
         "parser-inputs": {
             "consignment-reference": "ABC-123",
-            "s3-bucket": "dgandy-tna-out",
+            "s3-bucket": "tna-out",
             "attachment-urls": [],
             "s3-output-prefix": "parsed/judgment/ABC-123/0/"
     }
