@@ -22,6 +22,8 @@ RUN dotnet publish TRE/TRE.csproj -c Release -o /src --no-restore
 
 FROM base AS final 
 
+RUN yum update
+
 WORKDIR /var/task
 
 COPY --from=publish /src ${LAMBDA_TASK_ROOT}
