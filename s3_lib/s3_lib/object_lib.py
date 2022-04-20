@@ -4,6 +4,7 @@ import requests  # https://docs.python-requests.org/en/master/api/
 import hashlib  # https://docs.python.org/3/library/hashlib.html
 import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/index.html
 import codecs
+from s3_lib import common_lib
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -240,3 +241,19 @@ def get_s3_object_presigned_url(bucket, key, expiry):
         Params={'Bucket': bucket, 'Key': key},
         ExpiresIn=expiry
     )
+
+def get_object(bucket, key):
+    """
+    Return S3 object `key` from `bucket`, or raise error with object context.
+    """
+    logger.info(f'get_object bucket={bucket} key={key}')
+    s3c = boto3.client('s3')
+
+    try:
+        logger.info(f'get_object return')
+        return s3c.get_object(Bucket=bucket, Key=key)
+    except s3c.exceptions.NoSuchKey as e:
+        logger.error(str(e))
+        raise common_lib.S3LibError(
+                f'Unable to find key "{key}" in '
+                f'bucket "{bucket}". {str(e)}')
