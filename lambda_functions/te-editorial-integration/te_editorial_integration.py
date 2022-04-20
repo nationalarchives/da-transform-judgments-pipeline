@@ -62,8 +62,8 @@ def handler(event, context):
 
     Expected input event format is one of:
 
-    1. A list (if called from Parser); which is either:
-        1. A list with 2 dictionaries if the Parser reports no errors:
+    1. A list if called with Parser output, with one dictionary entry and one
+        array entry; e.g.:
 
         [
             {
@@ -81,30 +81,15 @@ def handler(event, context):
                     "s3-output-prefix": "parsed/judgment/ABC-123/0/"
                 }
             },
-            {
-                "parser-outputs" : {
-                    "xml": "ABC-123.xml",
-                    "metadata": "metadata.json",
-                    "images": ["world-1.png", "world-2.png"],
-                    "attachments": [],
-                    "log": "parser.log",
-                    "error-messages": []
-                }
-            }
-        ]
-
-        2. A list with a dictionary and a list if the Parser reports error(s):
-
-        [
-            {
-                "context" : { ... },
-                "parser-inputs": { ... }
-            },
             [
                 {
                     "parser-outputs" : {
-                        "error-messages": ["Error 1", ... , "Error n"],
-                        ...
+                        "xml": "ABC-123.xml",
+                        "metadata": "metadata.json",
+                        "images": ["world-1.png", "world-2.png"],
+                        "attachments": [],
+                        "log": "parser.log",
+                        "error-messages": []
                     }
                 },
                 ...
@@ -113,20 +98,20 @@ def handler(event, context):
 
     2. A dictionary if a retry message is received:
     
-    {
-      "consignment-reference": "...",
-      "consignment-type": "...",
-      "number-of-retries": 1
-    }
+        {
+        "consignment-reference": "...",
+        "consignment-type": "...",
+        "number-of-retries": 1
+        }
 
-    Output SNS message format:
+    Output SNS message format is:
 
-    {
-      "consignment-reference": "TDR-...",
-      "s3-folder-url": "...",
-      "consignment-type": "judgment",
-      "number-of-retries": 0
-    }
+        {
+            "consignment-reference": "TDR-...",
+            "s3-folder-url": "...",
+            "consignment-type": "judgment",
+            "number-of-retries": 0
+        }
     """
     logger.info(f'handler start: event="{event}"')
 
