@@ -11,6 +11,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Error class
+class S3LibError(Exception):
+    """
+    Used to indicate an S3Lib specific error condition.
+    """
+
 def get_env_var(env_var_name, must_exist=True, must_have_value=True):
     """
     Return the value of the environment variable named in `env_var_name`.

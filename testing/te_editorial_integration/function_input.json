@@ -1,0 +1,29 @@
+[
+  {
+    "context" : {
+        "number-of-retries": "${number_of_retries}",
+        "bag-info-txt": "bag-info.txt",
+        "judgment-document": "test.docx",
+        "consignment-type": "${consignment_type}"
+    },
+    "parser-inputs": {
+        "consignment-reference": "${consignment_reference}",
+        "s3-bucket": "${s3_bucket}",
+        "attachment-urls": [],
+        "s3-output-prefix": "${s3_path_prefix}${consignment_type}/${consignment_reference}/0/"
+    }
+  },
+  {
+    "parser-outputs" : {
+      "xml": "${consignment_reference}.xml",
+      "metadata": "metadata.json",
+      "images": [
+        "world-1.png",
+        "world-2.png"
+      ],
+      "attachments": [],
+      "log": "parser.log",
+      "error-messages": []
+    }
+  }
+]

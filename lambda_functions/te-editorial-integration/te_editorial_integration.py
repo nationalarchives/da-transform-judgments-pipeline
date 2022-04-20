@@ -4,6 +4,7 @@ from s3_lib import common_lib
 from s3_lib import object_lib
 from s3_lib import tar_lib
 import json
+import boto3
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -24,40 +25,86 @@ class TEEditorialIntegrationError(Exception):
 # Get environment variable values
 env_version_info = json.loads(common_lib.get_env_var('TE_VERSION_JSON', must_exist=True, must_have_value=True))
 env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
-env_s3_bucket = common_lib.get_env_var('S3_BUCKET', must_exist=True, must_have_value=True)
-env_s3_object_root = common_lib.get_env_var('S3_OBJECT_ROOT', must_exist=True, must_have_value=True)
-env_s3_file_parser_meta = common_lib.get_env_var('S3_FILE_PARSER_META', must_exist=True, must_have_value=True)
-env_s3_file_bagit_info = common_lib.get_env_var('S3_FILE_BAGIT_INFO', must_exist=True, must_have_value=True)
 
+KEY_CONTEXT = 'context'
+KEY_NUMBER_OF_RETRIES='number-of-retries'
+KEY_BAG_INFO = 'bag-info-txt'
+KEY_JUDGMENT_DOC = 'judgment-document'
+KEY_CONSIGNMENT_TYPE = 'consignment-type'
+
+KEY_PARSER_INPUTS = 'parser-inputs'
 KEY_CONSIGNMENT_REF='consignment-reference'
+KEY_S3_BUCKET='s3-bucket'
+KEY_S3_PREFIX='s3-output-prefix'
+
+KEY_PARSER_OUTPUTS = 'parser-outputs'
+KEY_XML = 'xml'
+KEY_PARSER_METADATA = 'metadata'
+KEY_IMAGES = 'images'
+KEY_ATTACHMENTS = 'attachments'
+KEY_LOG = 'log'
+KEY_ERROR_MESSAGES = 'error-messages'
+
+OUTPUT_MESSAGE_FILE = 'output-message.json'
+PRODUCER_NAME = 'TRE'
+FILE_TRE_METADATA = 'metadata.json'
 KEY_CONSIGNMENT_TYPE='consignment-type'
-KEY_PRIOR_ATTEMPT_COUNT='number-of-retries'
-FILE_EXT_DOCX='.docx'
-FILE_EXT_XML='.xml'
-TE_PREFIX='TRE-'
+S3_SEP = '/'
+KEY_TAR_GZ = 'tar-gz'
+KEY_BUCKET = 'bucket'
+KEY_KEY = 'key'
+KEY_PRESIGNED_TAR_GZ_URL = 's3-folder-url'
+KEY_EDITORIAL_OUTPUT = 'editorial-output'
 
 def handler(event, context):
     """
-    Given a set of parser output files at a predefined location:
+    Determine input event type (parser or retry) and process accordingly.
+
+    Expected input event format is one of:
+
+    * If from Parser (a list):
+
+    [
+        {
+            "context" : {
+                "number-of-retries": "0",
+                "s3-bagit-name": "bag-info.txt",
+                "judgment-document": "judgment.docx",
+                "consignment-type": "judgment",
+                "bagit-info": "bag-info.txt"
+            },
+            "parser-inputs": {
+                "consignment-reference": "ABC-123",
+                "s3-bucket": "...",
+                "attachment-urls": [],
+                "s3-output-prefix": "parsed/judgment/ABC-123/0/"
+            }
+        },
+        {
+            "parser-outputs" : {
+            "xml": "ABC-123.xml",
+            "metadata": "metadata.json",
+            "images": [
+                "world-1.png",
+                "world-2.png"
+            ],
+            "attachments": [],
+            "log": "parser.log",
+            "error-messages": []
+            }
+        }
+    ]
+
+    * If a retry message (a dictionary):
     
-    * Find the latest version of the requested judgement (i.e. the latest TDR
-      data; this is determined from the s3 object path)
-    * Ensure the current Editorial retry number has not been used
-    * Use the current retry number in the s3 object key prefix (path) to:
-        * Generate a JSON metadata file
-        * Package the JSON metadata and parser files into a `tar.gz` archive
-        * Generate a pre-shared URL for the `tar.gz` archive
-        * Prepare a JSON message to send to Editorial (via subsequent SNS step)
-
-    Expected input event format; number-of-retries is optional (default is 0):
-
     {
       "consignment-reference": "...",
       "consignment-type": "...",
       "number-of-retries": 0
     }
 
-    SNS message format:
+    Output SNS message format:
+
     {
       "consignment-reference": "TDR-...",
       "s3-folder-url": "...",
@@ -66,159 +113,373 @@ def handler(event, context):
     }
     """
     logger.info(f'handler start: event="{event}"')
-    validate_input(event)
-    prior_attempt_count = int(event[KEY_PRIOR_ATTEMPT_COUNT]) if KEY_PRIOR_ATTEMPT_COUNT in event else 0                                                                                                                                                                                                                                                                                                                            
-    consignment_reference = event[KEY_CONSIGNMENT_REF]
-    consignment_type = event[KEY_CONSIGNMENT_TYPE]
-    
-    # Prior TDR stage number-of-retries is unknown when get an Editorial retry
-    # message, so use the count in the TDR input path to find the latest one
-    s3_object_latest_tdr_root = f'{env_s3_object_root}{consignment_type}/{consignment_reference}/'
-    latest_tdr_retry = object_lib.get_max_s3_subfolder_number(env_s3_bucket, s3_object_latest_tdr_root)
-    if latest_tdr_retry is None:
-        raise TEEditorialIntegrationError('Unable to determine the latest retry count from the TDR stage')
-    latest_tdr_retry = int(latest_tdr_retry)
 
-    # Now we know where to read our input from, and write our output
-    s3_input_path = f'{s3_object_latest_tdr_root}{latest_tdr_retry}'
-    s3_output_path = f'{s3_input_path}/{prior_attempt_count}'
-    logger.info(
-        f'prior_attempt_count="{prior_attempt_count}" '
-        f'latest_tdr_retry="{latest_tdr_retry}" '
-        f'env_s3_bucket={env_s3_bucket} s3_input_path="{s3_input_path}" '
-        f'consignment_reference={consignment_reference} '
-        f'consignment_type={consignment_type} '
-        f's3_output_path="{s3_output_path}"')
-    
-    input_objects = [
-        f'{s3_input_path}/{env_s3_file_parser_meta}',
-        f'{s3_input_path}/{consignment_reference}{FILE_EXT_XML}'
-    ]
+    # Parser output is list, retry message is dictionary
+    if isinstance(event, list):
+        return ParserHandler(event).process()
+    elif isinstance(event, dict):
+        return RetryHandler(event).process()
 
-    logger.info(f'input_objects={input_objects}')
+    raise TEEditorialIntegrationError(
+        'Invalid input event; expected list (from parser) or '
+        'dictionary (from retry)')
 
-    # Get latest used editorial retry number, from s3 (may be None):
-    prior_ed_attempts_root = f'{s3_object_latest_tdr_root}{latest_tdr_retry}/'
-    logger.info(f'prior_ed_attempts_root={prior_ed_attempts_root}')
-    prior_ed_attempt_latest = object_lib.get_max_s3_subfolder_number(env_s3_bucket, prior_ed_attempts_root)
-    expected_editorial_attempt = 0 if prior_ed_attempt_latest is None else 1 + int(prior_ed_attempt_latest)
-    logger.info(f'prior_ed_attempt_latest={prior_ed_attempt_latest} expected_editorial_attempt={expected_editorial_attempt}')
+class ParserHandler:
+    """
+    Process parser output.
+    """
+    def __init__(self, event):
+        """
+        Initialise object from event data and perform basic validation.
+        Assume Editorial retry number 0; check this has not been used in S3.
+        """
+        logger.info('ParserHandler.__init__ start')
+        
+        # Get context parameter block
+        context_block = [item for item in event if KEY_CONTEXT in item and KEY_PARSER_INPUTS in item]
+        logger.info(f'context_block={context_block}')
+        if len(context_block) != 1:
+            raise ValueError(
+                f'Error locating input parameter block with keys '
+                f'"{KEY_CONTEXT}" and "{KEY_PARSER_INPUTS}"; '
+                f'{len(context_block)} records found')
+        
+        # Get parser output parameter block
+        parser_output_block = [item for item in event if KEY_PARSER_OUTPUTS in item]
+        logger.info(f'parser_output_block={parser_output_block}')
+        if len(parser_output_block) != 1:
+            raise ValueError(
+                f'Error locating input parameter block with key '
+                f'"{KEY_PARSER_OUTPUTS}"; {len(parser_output_block)} records found')
 
-    # Abort if not the expected attempt count
-    if prior_attempt_count != expected_editorial_attempt:
-        raise TEEditorialIntegrationError(
-            f'Expected number-of-retries to be '
-            f'"{expected_editorial_attempt}" but got "{prior_attempt_count}"')
+        # Extract and save parameter blocks
+        self.context = context_block[0][KEY_CONTEXT]
+        self.parser_inputs = context_block[0][KEY_PARSER_INPUTS]
+        self.parser_outputs = parser_output_block[0][KEY_PARSER_OUTPUTS]
+        logger.info(f'self.context={self.context}')
+        logger.info(f'self.parser_inputs={self.parser_inputs}')
+        logger.info(f'self.parser_outputs={self.parser_outputs}')
 
-    # Abort if objects already exist at output path for current "retry" number
-    if object_lib.s3_object_exists(env_s3_bucket, s3_output_path):
-        raise TEEditorialIntegrationError(
-            f'Objects already exist in bucket "{env_s3_bucket}" with '
-            f'prefix "{s3_output_path}" (retry {prior_attempt_count})')
+        # Validate
+        self.validate_fields()
 
-    # Ensure any statically defined input objects exist in s3
-    for input_object in input_objects:
-        if not object_lib.s3_object_exists(env_s3_bucket, input_object):
+        # Ensure this process has not already been run
+        prior_ed_attempt_latest = object_lib.get_max_s3_subfolder_number(
+                self.parser_inputs[KEY_S3_BUCKET],
+                self.parser_inputs[KEY_S3_PREFIX])
+
+        if prior_ed_attempt_latest is not None:
+            raise ValueError(
+                f'First run of process found unexpected output folder '
+                f'"{prior_ed_attempt_latest}" at path '
+                f'"{self.parser_inputs[KEY_S3_PREFIX]}" in bucket '
+                f'"{self.parser_inputs[KEY_S3_BUCKET]}".')
+
+        # Set path for editorial output to be retry 0 (always zero for creation via TDR call)
+        self.number_of_editorial_retries = 0
+        self.s3_output_prefix_ed = (self.parser_inputs[KEY_S3_PREFIX]
+            + str(self.number_of_editorial_retries) + '/')
+
+        logger.info('ParserHandler.__init__ end')
+
+    def validate_fields(self):
+        """
+        Perform validation on the input event data
+        """
+        logger.info('validate_fields start')
+
+        missing_context_fields = []
+        if KEY_NUMBER_OF_RETRIES not in self.context:
+            missing_context_fields.append(KEY_NUMBER_OF_RETRIES)
+        if KEY_BAG_INFO not in self.context:
+            missing_context_fields.append(KEY_BAG_INFO)
+        if KEY_JUDGMENT_DOC not in self.context:
+            missing_context_fields.append(KEY_JUDGMENT_DOC)
+        if KEY_CONSIGNMENT_TYPE not in self.context:
+            missing_context_fields.append(KEY_CONSIGNMENT_TYPE)
+        if len(missing_context_fields) > 0:
             raise TEEditorialIntegrationError(
-                f'Object "{input_object}" not found in bucket "{env_s3_bucket}"')
+                f'Missing mandatory context block inputs: {missing_context_fields}')
 
-    # Add .docx files to input list
-    input_file_prefix = f'{s3_input_path}/'
-    documents = get_documents(env_s3_bucket, input_file_prefix)
-    if len(documents) == 0:
-        raise TEEditorialIntegrationError(
-            f'Did not find any files with extension "{FILE_EXT_DOCX}" in '
-            f'bucket {env_s3_bucket} using filter {input_file_prefix}')
-    input_objects.extend(documents)
+        missing_parser_input_fields = []
+        if KEY_CONSIGNMENT_REF not in self.parser_inputs:
+            missing_parser_input_fields.append(KEY_CONSIGNMENT_REF)
+        if KEY_S3_BUCKET not in self.parser_inputs:
+            missing_parser_input_fields.append(KEY_S3_BUCKET)
+        if KEY_S3_PREFIX not in self.parser_inputs:
+            missing_parser_input_fields.append(KEY_S3_PREFIX)
+        if len(missing_parser_input_fields) > 0:
+            raise TEEditorialIntegrationError(
+                f'Missing mandatory parser input block inputs: {missing_parser_input_fields}')
 
-    # Get Bagit metadata as JSON key-value pairs
-    bagit_info_s3_key = f'{s3_input_path}/{env_s3_file_bagit_info}'
-    bagit_info_dict = object_lib.s3_object_to_dictionary(
-        env_s3_bucket,
-        bagit_info_s3_key)
+        missing_parser_output_fields = []
+        if KEY_XML not in self.parser_outputs:
+            missing_parser_output_fields.append(KEY_XML)
+        if KEY_PARSER_METADATA not in self.parser_outputs:
+            missing_parser_output_fields.append(KEY_PARSER_METADATA)
+        if KEY_IMAGES not in self.parser_outputs:
+            missing_parser_output_fields.append(KEY_IMAGES)
+        if KEY_LOG not in self.parser_outputs:
+            missing_parser_output_fields.append(KEY_LOG)
+        if KEY_ERROR_MESSAGES not in self.parser_outputs:
+            missing_parser_output_fields.append(KEY_ERROR_MESSAGES)
+        if len(missing_parser_output_fields) > 0:
+            raise TEEditorialIntegrationError(
+                f'Missing mandatory parser output block inputs: {missing_parser_output_fields}')
 
-    # Generate the editorial metadata content
-    editorial_metadata = format_editorial_metadata(bagit_info_dict, env_version_info)
+        logger.info('validate_fields end')
 
-    # Create the metadata file
-    editorial_metadata_s3_key = f'{s3_output_path}/te-metadata.json'
-    object_lib.string_to_s3_object(
-        json.dumps(editorial_metadata, indent=4),
-        env_s3_bucket,
-        editorial_metadata_s3_key)
+    def process(self):
+        """
+        * Create a tar.gz file in S3 with:
+            * Generated JSON metadata file
+            * Parser output files
+            * Judgment doc
+        * Generate a pre-shared URL for the `tar.gz` archive
+        * Return JSON output with message for Editorial notification (via
+          subsequent SNS step) and save this to s3 for any retry processing
+        """
+        logger.info('process start')
 
-    # Include the metadata file in the list of files for the tar.gz file
-    input_objects.append(editorial_metadata_s3_key)
+        # Build list of files to tar
+        to_tar_list = []
+        prefix = self.parser_inputs[KEY_S3_PREFIX]
+        tre_metadata_file = self.create_tre_metadata_file()
+        to_tar_list.append(tre_metadata_file)
+        to_tar_list.append(prefix + self.parser_outputs[KEY_XML])
+        to_tar_list.append(prefix + self.parser_outputs[KEY_LOG])
+        to_tar_list.append(prefix + self.context[KEY_JUDGMENT_DOC])
 
-    # Write the list of s3 files to the output tar
-    output_tar_gz = f'{s3_output_path}/{TE_PREFIX}{consignment_reference}.tar.gz'
-    logger.info(f'output_tar_gz={output_tar_gz}')
-    tar_items = tar_lib.s3_objects_to_s3_tar_gz_file(
-        env_s3_bucket,
-        input_objects,
-        output_tar_gz,
-        f'{consignment_reference}/')
+        if KEY_IMAGES in self.parser_outputs:
+            for image in self.parser_outputs[KEY_IMAGES]:
+                to_tar_list.append(prefix + image)
 
-    # Generate a presigned URL for the output tar.gz file
-    presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
-        env_s3_bucket,
-        output_tar_gz,
-        env_presigned_url_expiry)
+        # Write the list of s3 files to the output tar
+        output_tar_gz = (self.s3_output_prefix_ed + PRODUCER_NAME + '-' 
+            + self.parser_inputs[KEY_CONSIGNMENT_REF] + '.tar.gz')
+        logger.info(f'output_tar_gz={output_tar_gz}')
+        tar_items = tar_lib.s3_objects_to_s3_tar_gz_file(
+            self.parser_inputs[KEY_S3_BUCKET],
+            to_tar_list,
+            output_tar_gz,
+            f'{self.parser_inputs[KEY_CONSIGNMENT_REF]}/')
+        
+        # Generate a presigned URL for the output tar.gz file
+        presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
+            self.parser_inputs[KEY_S3_BUCKET],
+            output_tar_gz,
+            env_presigned_url_expiry)
 
-    # Return summary information
-    logger.info(f'handler return')
-    return {
-        'editorial-output': {
-            'consignment-reference': consignment_reference,
-            's3-folder-url': presigned_tar_gz_url,
-            'consignment-type': consignment_type,
-            'number-of-retries': prior_attempt_count
-        },
-        'tar-gz': {
-            'bucket': env_s3_bucket,
-            'key': output_tar_gz,
-            'items': tar_items
+        # Create the output message
+        output_message = {
+            KEY_EDITORIAL_OUTPUT: {
+                'consignment-reference': self.parser_inputs[KEY_CONSIGNMENT_REF],
+                KEY_PRESIGNED_TAR_GZ_URL: presigned_tar_gz_url,
+                'consignment-type': self.context[KEY_CONSIGNMENT_TYPE],
+                'number-of-retries': self.number_of_editorial_retries
+            },
+            KEY_TAR_GZ: {
+                KEY_BUCKET: self.parser_inputs[KEY_S3_BUCKET],
+                KEY_KEY: output_tar_gz,
+                'items': tar_items
+            }
         }
-    }
 
-def format_editorial_metadata(bagit_info, version_info):
-    """
-    Return a dictionary of editorial metadata content.
-    """
-    logger.info('create_editorial_metadata_file start')
-    output = version_info.copy()
-    output['uploader-email'] = bagit_info['Contact-Email']
-    output['bagit-info'] = bagit_info
-    logger.info(f'create_editorial_metadata_file return: output={output}')
-    return output
-
-def validate_input(event):
-    """
-    Raise an error if required input fields are missing.
-    """
-    logger.info('validate_input start')
-    missing_input_list = []
-    if not KEY_CONSIGNMENT_REF in event:
-        missing_input_list.append(KEY_CONSIGNMENT_REF)
-    if not KEY_CONSIGNMENT_TYPE in event:
-        missing_input_list.append(KEY_CONSIGNMENT_TYPE)
-    if len(missing_input_list) > 0:
-        raise TEEditorialIntegrationError(
-            f'Missing mandatory inputs: {missing_input_list}')
-    logger.info('validate_input end')
-
-def get_documents(s3_bucket, path):
-    """
-    Return a list of objects from s3 location with extension `.docx`.
-    """
-    logger.info('get_documents start')
-    documents = []
-    s3_object_list = object_lib.s3_ls(s3_bucket, path)
-    logger.info(f's3_object_list={s3_object_list}')
-    for s3_object in s3_object_list:
-        if s3_object.endswith(FILE_EXT_DOCX):
-            logger.info(f'located input file: {s3_object} in {env_s3_bucket}')
-            documents.append(s3_object)
+        # Save output message (in case of Editorial retries)
+        object_lib.string_to_s3_object(
+            json.dumps(output_message),
+            self.parser_inputs[KEY_S3_BUCKET],
+            self.s3_output_prefix_ed + OUTPUT_MESSAGE_FILE)
     
-    logger.info('get_documents return')
-    return documents
+        # Return output message with presigned URL
+        logger.info(f'process return')
+        return output_message
+        
+    def get_reference_prefix(self):
+        """
+        Use producer name + consignment reference as a prefix.
+        """
+        logger.info('get_reference_prefix')
+        return PRODUCER_NAME + '-' + self.parser_inputs[KEY_CONSIGNMENT_REF] + '-'
+
+    def create_tre_metadata_file(self):
+        """
+        Create the metadata file for the tar and return its path.
+        """
+        logger.info('create_tre_metadata_file start')
+        output_name = self.get_reference_prefix() + FILE_TRE_METADATA
+        s3_path = (self.parser_inputs[KEY_S3_PREFIX] 
+            + str(self.number_of_editorial_retries) + S3_SEP + output_name)
+        
+        # Load parser metadata file as dictionary
+        parser_metadata = self.get_parser_metadata_file()
+        bagit_info_dict = object_lib.s3_object_to_dictionary(
+            self.parser_inputs[KEY_S3_BUCKET],
+            self.parser_inputs[KEY_S3_PREFIX] + self.context[KEY_BAG_INFO])
+        
+        # Create metadata dictionary
+        tre_metadata = self.build_tre_metadata(output_name, parser_metadata, bagit_info_dict)
+
+        # Save metadata to S3 object (raises error if exists)
+        object_lib.string_to_s3_object(
+            json.dumps(tre_metadata),
+            self.parser_inputs[KEY_S3_BUCKET],
+            s3_path)
+        
+        logger.info(f'create_tre_metadata_file return: s3_path={s3_path}')
+        return s3_path
+
+    def get_parser_metadata_file(self):
+        """
+        Load the Parser metadata JSON file.
+        """
+        logger.info('get_parser_metadata_file start')
+        bucket = self.parser_inputs[KEY_S3_BUCKET]
+        key = self.parser_inputs[KEY_S3_PREFIX] + self.parser_outputs[KEY_PARSER_METADATA]
+        logger.info(f'get_parser_metadata_file bucket={bucket} key={key}')
+        s3c = boto3.client('s3')
+        s3_object = s3c.get_object(Bucket=bucket, Key=key)
+        parser_metadata = json.loads(s3_object['Body'].read())
+        logger.info(f'get_parser_metadata_file return {parser_metadata}')
+        return parser_metadata
+
+    def build_tre_metadata(self, filename, parser_metadata, bagit_info):
+        """
+        Return TRE metadata dictionary.
+        """
+        logger.info('build_tre_metadata start')
+
+        parser_content = parser_metadata.copy()
+        parser_content['error-messages'] = self.parser_outputs[KEY_ERROR_MESSAGES].copy()
+        
+        output =  {
+            'producer': {
+                'name': PRODUCER_NAME,
+                'process': 'transform',
+                'type': self.context[KEY_CONSIGNMENT_TYPE]
+            },
+            'parameters': {
+                PRODUCER_NAME: {
+                    'reference': PRODUCER_NAME + '-' + self.parser_inputs[KEY_CONSIGNMENT_REF],
+                    'payload': {
+                        'filename': self.context[KEY_JUDGMENT_DOC],
+                        'xml': self.parser_outputs[KEY_XML],
+                        'metadata': filename,
+                        'images': self.parser_outputs[KEY_IMAGES],
+                        'log': self.parser_outputs[KEY_LOG]
+                    }
+                },
+                'PARSER': parser_content,
+                'TDR': bagit_info.copy()
+            }
+        }
+
+        logger.info('build_tre_metadata return; output={output}')
+        return output
+
+class RetryHandler:
+    """
+    Process retry event to send a new presigned URL.
+    """
+    def __init__(self, event):
+        """
+        Initialise object from event data and perform basic validation.
+        """
+        logger.info('RetryHandler.__init__ start')
+        
+        # Retry message has no S3 context from prior steps, fall back to env vars for this
+        self.s3_bucket = common_lib.get_env_var('S3_BUCKET', must_exist=True, must_have_value=True)
+        self.s3_object_root = common_lib.get_env_var('S3_OBJECT_ROOT', must_exist=True, must_have_value=True)
+
+        # Extract and save parameter blocks
+        self.event = event
+
+        # Validate
+        self.validate_fields()
+        logger.info('RetryHandler.__init__ end')
+
+    def validate_fields(self):
+        """
+        Perform basic validation on the input event data.
+        """
+        logger.info('validate_fields start')
+        missing_fields = []
+        if KEY_NUMBER_OF_RETRIES not in self.event:
+            missing_fields.append(KEY_NUMBER_OF_RETRIES)
+        if KEY_CONSIGNMENT_REF not in self.event:
+            missing_fields.append(KEY_CONSIGNMENT_REF)
+        if KEY_CONSIGNMENT_TYPE not in self.event:
+            missing_fields.append(KEY_CONSIGNMENT_TYPE)
+
+        if len(missing_fields) > 0:
+            raise TEEditorialIntegrationError(
+                f'Missing mandatory input fields: {missing_fields}')
+
+        logger.info('validate_fields end')
+
+    def process(self):
+        """
+        Return new output message with regenerated presigned URL and updated
+        number-of-retries field values. Save a copy of the message in case
+        subsequent retries are received.
+        """
+        logger.info('process start')
+
+        # Prior TDR stage number-of-retries is unknown when get an Editorial retry
+        # message, so use the count in the TDR input path to find the latest one
+        s3_tdr_root = (self.s3_object_root
+            + self.event[KEY_CONSIGNMENT_TYPE] + S3_SEP
+            + self.event[KEY_CONSIGNMENT_REF] + S3_SEP)
+        
+        latest_tdr_retry = object_lib.get_max_s3_subfolder_number(
+            self.s3_bucket, s3_tdr_root)
+
+        if latest_tdr_retry is None:
+            raise TEEditorialIntegrationError('No TDR output data found')
+        
+        latest_tdr_retry = int(latest_tdr_retry)
+
+        # Get last editorial retry number from S3 ("should" exist from TDR "retry" 0)
+        ed_root = s3_tdr_root + str(latest_tdr_retry) + S3_SEP
+        last_s3_ed_retry = object_lib.get_max_s3_subfolder_number(
+            self.s3_bucket, ed_root)
+
+        # Abort if no prior Editorial retry found (should be at least 0 from TDR stage)
+        if last_s3_ed_retry is None:
+            raise TEEditorialIntegrationError('No Editorial output data found')
+
+        # Abort if message number-of-retries value is not the expected value
+        expected_ed_retry = int(last_s3_ed_retry) + 1
+
+        if int(self.event[KEY_NUMBER_OF_RETRIES]) != int(expected_ed_retry) :
+            raise TEEditorialIntegrationError(
+                f'Expected number-of-retries to be "{expected_ed_retry}" '
+                f'but got "{self.event[KEY_NUMBER_OF_RETRIES]}"')
+
+        # Read last message
+        bucket = self.s3_bucket
+        key = ed_root + str(last_s3_ed_retry) + S3_SEP + OUTPUT_MESSAGE_FILE
+        logger.info(f'getting prior output_message bucket={bucket} key={key}')
+        s3c = boto3.client('s3')
+        s3_object = s3c.get_object(Bucket=bucket, Key=key)
+        output_message = json.loads(s3_object['Body'].read())
+
+        # Regenerate presigned URL
+        presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
+            bucket=output_message[KEY_TAR_GZ][KEY_BUCKET],
+            key=output_message[KEY_TAR_GZ][KEY_KEY],
+            expiry=env_presigned_url_expiry)
+
+        # Update output message with new presigned URL and retry counter
+        output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_URL] = presigned_tar_gz_url
+        output_message[KEY_EDITORIAL_OUTPUT][KEY_NUMBER_OF_RETRIES] = expected_ed_retry
+
+        # Save new output message (for any subsequent retries to update again)
+        output_key = ed_root + str(expected_ed_retry) + S3_SEP + OUTPUT_MESSAGE_FILE
+        object_lib.string_to_s3_object(
+            string=json.dumps(output_message),
+            target_bucket_name=output_message[KEY_TAR_GZ][KEY_BUCKET],
+            target_object_name=output_key)
+
+        logger.info('process return')
+        return output_message
