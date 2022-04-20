@@ -33,7 +33,8 @@ To run step `te-editorial-integration`:
         number_of_retries='0'
         ```
 
-    2. To simulate triggering via the step function's Parser execution path:
+    2. Example using a test file to simulate triggering via the step
+        function's Parser execution path:
 
         ```bash        
         ./run.sh \
@@ -43,10 +44,11 @@ To run step `te-editorial-integration`:
             "${consignment_type}" \
             "${number_of_retries}" \
             "${presigned_url_timeout}" \
-            'function_input.json'
+            'function_input_v2_ok_1.json'
         ```
 
-    3. To simulate triggering via the step function's editorial retry path:
+    3. Example using a test file to simulate triggering via the step
+        function's editorial retry path:
 
         ```bash
         ./run.sh \

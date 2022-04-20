@@ -87,8 +87,8 @@ cp -r "${bagit}" "${bagit}-bad"
 vi "${bagit}-bad/manifest-sha256.txt"
 vi "${bagit}-bad/tagmanifest-sha256.txt"
 
-# Create a new tar.gz archive:
-tar -czvf "${bagit}-bad.tar.gz" "${bagit}-bad"
+# Create a new tar.gz archive (use COPYFILE_DISABLE=1 on macOS):
+COPYFILE_DISABLE=1 tar -czvf "${bagit}-bad.tar.gz" "${bagit}-bad"
 
 # Verify new archive:
 tar -tvf "${bagit}-bad.tar.gz"
