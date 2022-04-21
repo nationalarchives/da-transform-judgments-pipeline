@@ -2,7 +2,7 @@ FROM public.ecr.aws/lambda/python:3.8
 ARG s3_lib_whl
 
 # Copy function code
-COPY te_editorial_integration.py ${LAMBDA_TASK_ROOT}
+COPY tre_editorial_integration.py ${LAMBDA_TASK_ROOT}
 
 # Install the function's dependencies using file requirements.txt
 COPY "${s3_lib_whl}" .
