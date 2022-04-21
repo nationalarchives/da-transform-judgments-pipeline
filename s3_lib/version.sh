@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-export S3_LIB_VERSION=0.0.7
+export S3_LIB_VERSION=0.0.8
