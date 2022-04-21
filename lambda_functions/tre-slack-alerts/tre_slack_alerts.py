@@ -15,7 +15,7 @@ def lambda_handler(event, context):
     if 'ErrorMessage' in message:
         error_type = message['ErrorType']
         error_message = message['ErrorMessage']
-        final_message = "*" + "ERROR "+ "*"+ ":alert:" + "<!here>" + "\n" +"*" + "Environment: "  + "*" + "`" + env + "`" + "\n" + "*" + "ExecutionName: " +"*" + "`" + execution+ "`" + "\n" + "*" + "StateMachine: " + "*" + "`" + state_machine + "`" + "\n" + "*" + "ErrorType: "  + "*" + "`" + error_type + "`" + "\n" + "```" + "Error Message: "+ error_message + "```"
+        final_message = "*" + "ERROR "+ "*"+ ":alert:" + "<!here>" + "\n" +"*" + "Environment: "  + "*" + "`" + env + "`" + "\n" + "*" + "ExecutionName: " +"*" + "`" + execution+ "`" + "\n" + "*" + "StateMachine: " + "*" + "`" + state_machine + "`" + "\n" + "*" + "ErrorType: "  + "*" + "`" + error_type + "`" + "\n" + "```" + "Error Message: "+ str(error_message) + "```"
         
         msg = {
             "channel": os.environ['SLACK_CHANNEL'],
