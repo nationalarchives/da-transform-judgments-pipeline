@@ -22,7 +22,7 @@ RUN dotnet publish TRE/TRE.csproj -c Release -o /src --no-restore
 
 FROM base AS final 
 
-RUN yum update
+RUN yum -y update && yum clean all
 
 WORKDIR /var/task
 
