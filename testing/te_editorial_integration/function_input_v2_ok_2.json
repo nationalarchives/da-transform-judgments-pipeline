@@ -13,17 +13,19 @@
         "s3-output-prefix": "${s3_path_prefix}${consignment_type}/${consignment_reference}/0/"
     }
   },
-  {
-    "parser-outputs" : {
-      "xml": "${consignment_reference}.xml",
-      "metadata": "metadata.json",
-      "images": [
-        "world-1.png",
-        "world-2.png"
-      ],
-      "attachments": [],
-      "log": "parser.log",
-      "error-messages": []
+  [
+    {
+      "parser-outputs" : {
+        "xml": "${consignment_reference}.xml",
+        "metadata": "metadata.json",
+        "images": [
+          "world-1.png",
+          "world-2.png"
+        ],
+        "attachments": [],
+        "log": "parser.log",
+        "error-messages": []
+      }
     }
-  }
+  ]
 ]

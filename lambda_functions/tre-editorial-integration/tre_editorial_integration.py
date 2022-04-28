@@ -62,59 +62,60 @@ def handler(event, context):
 
     Expected input event format is one of:
 
-    * If from Parser (a list):
+    1. A list if called with Parser output, with one dictionary entry and one
+        array entry; e.g.:
 
-    [
-        {
-            "context" : {
-                "number-of-retries": "0",
-                "s3-bagit-name": "bag-info.txt",
-                "judgment-document": "judgment.docx",
-                "consignment-type": "judgment",
-                "bagit-info": "bag-info.txt"
+        [
+            {
+                "context" : {
+                    "number-of-retries": "0",
+                    "s3-bagit-name": "bag-info.txt",
+                    "judgment-document": "judgment.docx",
+                    "consignment-type": "judgment",
+                    "bagit-info": "bag-info.txt"
+                },
+                "parser-inputs": {
+                    "consignment-reference": "ABC-123",
+                    "s3-bucket": "...",
+                    "attachment-urls": [],
+                    "s3-output-prefix": "parsed/judgment/ABC-123/0/"
+                }
             },
-            "parser-inputs": {
-                "consignment-reference": "ABC-123",
-                "s3-bucket": "...",
-                "attachment-urls": [],
-                "s3-output-prefix": "parsed/judgment/ABC-123/0/"
-            }
-        },
-        {
-            "parser-outputs" : {
-            "xml": "ABC-123.xml",
-            "metadata": "metadata.json",
-            "images": [
-                "world-1.png",
-                "world-2.png"
-            ],
-            "attachments": [],
-            "log": "parser.log",
-            "error-messages": []
-            }
-        }
-    ]
+            [
+                {
+                    "parser-outputs" : {
+                        "xml": "ABC-123.xml",
+                        "metadata": "metadata.json",
+                        "images": ["world-1.png", "world-2.png"],
+                        "attachments": [],
+                        "log": "parser.log",
+                        "error-messages": []
+                    }
+                },
+                ...
+            ]
+        ]
 
-    * If a retry message (a dictionary):
+    2. A dictionary if a retry message is received:
     
-    {
-      "consignment-reference": "...",
-      "consignment-type": "...",
-      "number-of-retries": 0
-    }
+        {
+        "consignment-reference": "...",
+        "consignment-type": "...",
+        "number-of-retries": 1
+        }
 
-    Output SNS message format:
+    Output SNS message format is:
 
-    {
-      "consignment-reference": "TDR-...",
-      "s3-folder-url": "...",
-      "consignment-type": "judgment",
-      "number-of-retries": 0
-    }
+        {
+            "consignment-reference": "TDR-...",
+            "s3-folder-url": "...",
+            "consignment-type": "judgment",
+            "number-of-retries": 0
+        }
     """
     logger.info(f'handler start: event="{event}"')
 
-    # Parser output is list, retry message is dictionary
+    # Parser output is always a list, retry message is always a dictionary
     if isinstance(event, list):
         return ParserHandler(event).process()
     elif isinstance(event, dict):
@@ -145,7 +146,12 @@ class ParserHandler:
                 f'{len(context_block)} records found')
         
         # Get parser output parameter block
-        parser_output_block = [item for item in event if KEY_PARSER_OUTPUTS in item]
+        parser_output_block = []
+        for i in event:
+            parser_output_block = [j for j in i if KEY_PARSER_OUTPUTS in j]
+            if len(parser_output_block) > 0:
+                break
+
         logger.info(f'parser_output_block={parser_output_block}')
         if len(parser_output_block) != 1:
             raise ValueError(
@@ -246,13 +252,25 @@ class ParserHandler:
         prefix = self.parser_inputs[KEY_S3_PREFIX]
         tre_metadata_file = self.create_tre_metadata_file()
         to_tar_list.append(tre_metadata_file)
-        to_tar_list.append(prefix + self.parser_outputs[KEY_XML])
-        to_tar_list.append(prefix + self.parser_outputs[KEY_LOG])
+
+        if self.parser_outputs[KEY_XML] is None:
+            logger.info('Parser did not specify an XML output file')
+        else:
+            to_tar_list.append(prefix + self.parser_outputs[KEY_XML])
+        
+        if self.parser_outputs[KEY_LOG] is None:
+            logger.info('Parser did not specify a log output file')
+        else:
+            to_tar_list.append(prefix + self.parser_outputs[KEY_LOG])
+
         to_tar_list.append(prefix + self.context[KEY_JUDGMENT_DOC])
 
         if KEY_IMAGES in self.parser_outputs:
-            for image in self.parser_outputs[KEY_IMAGES]:
-                to_tar_list.append(prefix + image)
+            if self.parser_outputs[KEY_IMAGES] is None:
+                logger.info('Parser did not specify any image output files')
+            else:
+                for image in self.parser_outputs[KEY_IMAGES]:
+                    to_tar_list.append(prefix + image)
 
         # Write the list of s3 files to the output tar
         output_tar_gz = (self.s3_output_prefix_ed + PRODUCER_NAME + '-' 
@@ -334,11 +352,13 @@ class ParserHandler:
         Load the Parser metadata JSON file.
         """
         logger.info('get_parser_metadata_file start')
+        if self.parser_outputs[KEY_PARSER_METADATA] is None:
+            logger.info('Parser did not specify a metadata output file')
+            return {}
+
         bucket = self.parser_inputs[KEY_S3_BUCKET]
         key = self.parser_inputs[KEY_S3_PREFIX] + self.parser_outputs[KEY_PARSER_METADATA]
-        logger.info(f'get_parser_metadata_file bucket={bucket} key={key}')
-        s3c = boto3.client('s3')
-        s3_object = s3c.get_object(Bucket=bucket, Key=key)
+        s3_object = object_lib.get_object(bucket, key)
         parser_metadata = json.loads(s3_object['Body'].read())
         logger.info(f'get_parser_metadata_file return {parser_metadata}')
         return parser_metadata
