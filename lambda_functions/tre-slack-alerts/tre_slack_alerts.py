@@ -7,8 +7,8 @@ http = urllib3.PoolManager()
 
 def lambda_handler(event, context=None):
     print(event)
-    url = os.environ['SLACK_WEBHOOK_URL']
-    env = os.environ['ENV']
+    url = os.environ["SLACK_WEBHOOK_URL"]
+    env = os.environ["ENV"]
     message = json.loads(event["Records"][0]["Sns"]["Message"])
     msg = {}
 
@@ -39,16 +39,16 @@ def lambda_handler(event, context=None):
                 final_message = f"*SUCCESS* {icon} \n*ENVIRONMENT* `{env}` \n*ExecutionName* `{execution}` \n*StateMachine* `{state_machine}` \n"
 
             msg = {
-                "channel": os.environ['SLACK_CHANNEL'],
-                "username": os.environ['SLACK_USERNAME'],
+                "channel": os.environ["SLACK_CHANNEL"],
+                "username": os.environ["SLACK_USERNAME"],
                 "text": final_message,
                 "icon_emoji": icon,
             }
         else:
             print("Message received")
             msg = {
-                "channel": os.environ['SLACK_CHANNEL'],
-                "username": os.environ['SLACK_USERNAME'],
+                "channel": os.environ["SLACK_CHANNEL"],
+                "username": os.environ["SLACK_USERNAME"],
                 "text": final_message,
                 "icon_emoji": ":white_check_mark:",
             }
