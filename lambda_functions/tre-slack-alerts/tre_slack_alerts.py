@@ -5,7 +5,7 @@ import os
 http = urllib3.PoolManager()
 
 
-def lambda_handler(event, context=None):
+def lambda_handler(event):
     print(event)
     url = os.environ["SLACK_WEBHOOK_URL"]
     env = os.environ["ENV"]
