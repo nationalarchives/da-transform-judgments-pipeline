@@ -25,18 +25,17 @@ def lambda_handler(event, context):
         if str(status) == "success":
             print("Success Message received")
             icon = ":large_green_circle:"
-            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`\n*Event:* `{message_event}`"
+            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*Event:* `{message_event}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`"
         elif str(status) == "warning":
             print("Warning Message received")
             icon = ":large_orange_circle:"
             error_message = message.get("ErrorMessage", "")
-            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`\n*ErrorMessage:* `{error_message}`\n*Event:* `{message_event}`"
+            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*Event:* `{message_event}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`\n*ErrorMessage:*\n```{error_message}```"
         else:
             print("Error Message received")
-            icon = ":large_red_circle:"
+            icon = ":red_circle:"
             error_message = message.get("ErrorMessage", "")
-            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`\n*ErrorMessage:* `{error_message}`\n*Event:* `{message_event}`"
-
+            final_message = f"*STATUS* {icon} \n*Environment:* `{env}`\n*Event:* `{message_event}`\n*ExecutionName:* `{execution}`\n*StateMachine:* `{state_machine}`\n*ErrorMessage:*\n```{error_message}```"
     msg = {
         "channel": os.environ["SLACK_CHANNEL"],
         "username": os.environ["SLACK_USERNAME"],
