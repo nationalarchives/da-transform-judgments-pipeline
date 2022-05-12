@@ -1,0 +1,26 @@
+{
+    "test-editorial-retry": {
+        "consignment-ref": "?",
+        "s3-key-bagit": "consignments/judgements/?.tar.gz",
+        "s3-key-checksum": "consignments/judgements/?.tar.gz.sha256",
+        "tar-metadata-file": "?/TRE-?-metadata.json"
+    },
+    "test-bagit-retry": {
+        "consignment-ref": "?",
+        "s3-key-bagit": "consignments/judgements/?.tar.gz",
+        "s3-key-checksum": "consignments/judgements/?.tar.gz.sha256.bad",
+        "tar-metadata-file": "?/TRE-?-metadata.json"
+    },
+    "test-files-retry": {
+        "consignment-ref": "?-bad",
+        "s3-key-bagit": "consignments/judgements/?-bad.tar.gz",
+        "s3-key-checksum": "consignments/judgements/?-bad.tar.gz.sha256",
+        "tar-metadata-file": "?-bad/TRE-?-bad-metadata.json"
+    },
+    "test-parser-error": {
+        "consignment-ref": "?-invalid-docx",
+        "s3-key-bagit": "consignments/judgements/?-invalid-docx.tar.gz",
+        "s3-key-checksum": "consignments/judgements/?-invalid-docx.tar.gz.sha256",
+        "tar-metadata-file": "?-invalid-docx/TRE-?-invalid-docx-metadata.json"
+    }
+}

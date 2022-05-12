@@ -1,12 +1,16 @@
 # Testing
 
 * [Testing Code Deployed To AWS](#testing-code-deployed-to-aws)
+    * [Manual Testing](#manual-testing)
+    * [Automated Testing](#automated-testing)
 * [Testing Code Locally](#testing-code-locally)
 * [Appendices](#appendices)
     * [Creating An Example Input Message](#creating-an-example-input-message)
     * [Breaking A Bagit Archive For Testing](#breaking-a-bagit-archive-for-testing)
 
 # Testing Code Deployed To AWS
+
+## Manual Testing
 
 1. Copy a Bagit `.tar.gz` file and a corresponding `.tar.gz.sha256` file to an
     arbitrary s3 location
@@ -20,6 +24,10 @@
     queue (e.g. `non-prod` `dev-te-tdr-in`)
 4. Observe execution in the AWS console at `Step Functions -> State machines`
     for the environment being tested (e.g. `non-prod` `dev-te-state-machine`)
+
+## Automated Testing
+
+* [tre_module_test/README.md](tre_module_test/README.md)
 
 # Testing Code Locally
 

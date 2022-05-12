@@ -1,0 +1,18 @@
+{
+    "name": "example",
+    "resources": {
+        "sqs": {
+            "tre-tdr-in": {
+                "url": "https://sqs.region.amazonaws.com/account/dev-tre-tdr-in"
+            },
+            "tre-editorial-retry": {
+                "url": "https://sqs.region.amazonaws.com/account/dev-tre-editorial-retry"
+            }
+        },
+        "stepFunctions": {
+            "tre-state-machine": {
+                "arn": "arn:aws:states:region:account:stateMachine:dev-tre-state-machine"
+            }
+        }
+    }
+}
