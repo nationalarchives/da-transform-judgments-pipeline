@@ -1,26 +1,20 @@
 import json
+from json.tool import main
 import logging
 import boto3
 from botocore.exceptions import ClientError
 
 def create_presigned_url(bucket_name, object_name, expiration=3600):
     bucket_name = "dev-te-testdata"
-    object_name = "parser_test_docs/test.docx"
+    object_name = "parser_test_docs/AUTONOMY COMPOSITE PART A FINAL AS SEALED NOON.docx"
     # Generate a presigned URL for the S3 object
-    s3_client = boto3.client('s3')
-    try:
-        response = s3_client.generate_presigned_url('get_object',
-                                                    Params={'Bucket': bucket_name,
-                                                            'Key': object_name},
-                                                    ExpiresIn=expiration)
-    except ClientError as e:
-        logging.error(e)
-        return None
-
     # The response contains the presigned URL
-    return response
-
-
+    s3_client = boto3.client('s3')
+    return s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name,
+                    'Key': object_name},
+            ExpiresIn=expiration)
 
 
 url = create_presigned_url('BUCKET_NAME', 'OBJECT_NAME')
@@ -37,7 +31,6 @@ parser_input = {
 }
 print(parser_input)
 
-
 # Invoke parser lambda to test
 
 client = boto3.client('lambda')
@@ -48,8 +41,13 @@ parser_response = client.invoke(
 )
 parser_output = json.load(parser_response['Payload'])
 
-
-
-
 # Check if parser outputs contain any error
 assert len(parser_output["parser-outputs"]["error-messages"]) < 1
+
+
+def main():
+    print("Hello")
+
+    
+if __name__ == "__main__":
+    main()
