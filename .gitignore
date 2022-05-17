@@ -7,3 +7,6 @@ tmp-build-requirements.txt
 /tmp/
 .vscode/
 .DS_Store
+/.idea/
+/testing/tre_module_test/test_outputs/
+/testing/tre_module_test/config/
