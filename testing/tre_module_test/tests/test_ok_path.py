@@ -54,7 +54,7 @@ def test_ok_path(ct: ConsignmentTester, tc: TestConsignment):
     save_url_to_file(url=editorial_presigned_url, output_file=test1_tar_gz)
     test1_metadata_json = get_file_from_tar_as_json(tar=test1_tar_gz, file=tc.tar_metadata_file)
     logger.info(f'test1_metadata_json={test1_metadata_json}')
-    validate_metadata_keys_common(metadata=test1_metadata_json, tc=tc)
+    validate_metadata_keys_common(metadata=test1_metadata_json, tc=tc, ct=ct)
     assert test1_metadata_json['parameters']['TRE']['payload']['log'] == 'parser.log', f'Did not find "parser.log" entry in JSON metadata file {tc.tar_metadata_file}'
     logger.info('test_ok_path completed OK')
 

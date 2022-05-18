@@ -52,11 +52,11 @@ def main(s3_data_bucket, environment_file, consignment_file, aws_profile_data=No
     tc_files_retry = TestConsignment(config=test_consignments['test-files-retry'])
     tc_parser_error = TestConsignment(config=test_consignments['test-parser-error'])
 
+    test_editorial_retry(ct=ct, tc=tc_shared_consignment)  # good 1st test as also runs test_ok_path.py
     test_tdr_bagit_retry(ct=ct, tc=tc_bagit_retry)
     test_tdr_bagit_function_error(ct=ct)  # no tc param; uses malformed message to deliberately fail
     test_tdr_files_retry(ct=ct, tc=tc_files_retry)
     test_parser_error_path(ct=ct, tc=tc_parser_error)
-    test_editorial_retry(ct=ct, tc=tc_shared_consignment)
     # test_tdr_duplicate_resend_parallel(ct=ct, tc=tc_shared_consignment)
 
     logger.info('###########################################################')

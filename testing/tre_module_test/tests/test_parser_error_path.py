@@ -49,7 +49,7 @@ def test_parser_error_path(ct: ConsignmentTester, tc: TestConsignment):
     save_url_to_file(url=s3_folder_url, output_file=test_tar_gz)
     test_metadata_json = get_file_from_tar_as_json(tar=test_tar_gz, file=tc.tar_metadata_file)
     logger.info(f'test_metadata_json={test_metadata_json}')
-    validate_metadata_keys_common(metadata=test_metadata_json, tc=tc)
+    validate_metadata_keys_common(metadata=test_metadata_json, tc=tc, ct=ct)
     
     tar_file = (
             tc.consignment_ref + '/' +

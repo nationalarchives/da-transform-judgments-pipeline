@@ -37,10 +37,16 @@ class Environment():
         if self.KEY_URL not in config[self.KEY_RESOURCES][self.KEY_SQS][self.KEY_TRE_TDR_IN]:
             raise ValueError(f'Missing config key: {self.KEY_RESOURCES}.{self.KEY_SQS}.{self.KEY_TRE_TDR_IN}.{self.KEY_URL}')
 
+        self.env = f'{self.config[self.KEY_NAME]}'
         self.sqs_tre_tdr_in_url = self.config[self.KEY_RESOURCES][self.KEY_SQS][self.KEY_TRE_TDR_IN][self.KEY_URL]
         self.sqs_tre_editorial_retry = self.config[self.KEY_RESOURCES][self.KEY_SQS][self.KEY_TRE_EDITORIAL_RETRY][self.KEY_URL]
         self.step_function_tre_state_machine_arn = self.config[self.KEY_RESOURCES][self.KEY_STEP_FUNCTIONS][self.KEY_TRE_STATE_MACHINE][self.KEY_ARN]
-        self.step_function_name = f'{self.config[self.KEY_NAME]}-{self.KEY_TRE_STATE_MACHINE}'
-        self.s3_bucket_tre_temp = f'{self.config[self.KEY_NAME]}-tre-temp'
-        self.s3_bucket_tre_editorial_judgment_out = f'{self.config[self.KEY_NAME]}-tre-editorial-judgment-out'
-
+        self.step_function_name = f'{self.env}-{self.KEY_TRE_STATE_MACHINE}'
+        self.s3_bucket_tre_temp = f'{self.env}-tre-temp'
+        self.s3_bucket_tre_editorial_judgment_out = f'{self.env}-tre-editorial-judgment-out'
+        self.lambda_name_bagit_check = f'{self.env}-tre-bagit-checksum-validation'
+        self.lambda_name_files_check = f'{self.env}-tre-files-checksum-validation'
+        self.lambda_name_parser_input = f'{self.env}-tre-prepare-parser-input'
+        self.lambda_name_parser = f'{self.env}-tre-run-judgment-parser'
+        self.lambda_name_ed_int = f'{self.env}-tre-editorial-integration'
+        self.lambda_name_slack_alerts = f'{self.env}-tre-slack-alerts'

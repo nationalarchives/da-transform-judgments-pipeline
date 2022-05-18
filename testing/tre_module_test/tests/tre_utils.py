@@ -17,6 +17,7 @@ KEY_CONSIGNMENT_REF = 'consignment-reference'
 KEY_CONSIGNMENT_TYPE = 'consignment-type'
 KEY_NUMBER_OF_RETRIES = 'number-of-retries'
 KEY_S3_FOLDER_URL = 's3-folder-url'
+KEY_LAMBDA_VERSIONS = 'lambda-functions-version'
 
 AWS_STEP_FUNCTION_STATUS_RUNNING = 'RUNNING'
 AWS_STEP_FUNCTION_STATUS_SUCCEEDED = 'SUCCEEDED'
@@ -75,21 +76,28 @@ def get_file_from_tar_as_json(tar: str, file: str) -> json:
     return json.loads(get_file_from_tar_as_utf8(tar=tar, file=file))
 
 
-def validate_metadata_keys_common(metadata: dict, tc: TestConsignment):
+def validate_metadata_keys_common(metadata: dict, tc: TestConsignment, ct: ConsignmentTester):
     logger.info('validate_metadata_keys_common start')
-    assert 'producer' in metadata, f'Key "producer" is not in JSON metadata file {tc.tar_metadata_file}'
-    assert 'parameters' in metadata, f'Key "parameters" is not in JSON metadata file {tc.tar_metadata_file}'
-    assert 'TRE' in metadata['parameters'], f'Key "TRE" is not in JSON metadata file {tc.tar_metadata_file}'
-    assert 'PARSER' in metadata['parameters'], f'Key "PARSER" is not in JSON metadata file {tc.tar_metadata_file}'
-    assert 'TDR' in metadata['parameters'], f'Key "TDR" key is not in JSON metadata file {tc.tar_metadata_file}'
-    assert f'TRE-{tc.consignment_ref}' in metadata['parameters']['TRE']['reference'], f'Key "TRE-{tc.consignment_ref}" key is not in JSON metadata file {tc.tar_metadata_file}'
+    assert 'producer' in metadata, f'Key "producer" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert 'parameters' in metadata, f'Key "parameters" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert 'TRE' in metadata['parameters'], f'Key "TRE" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert 'PARSER' in metadata['parameters'], f'Key "PARSER" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert 'TDR' in metadata['parameters'], f'Key "TDR" key is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert f'TRE-{tc.consignment_ref}' in metadata['parameters']['TRE']['reference'], f'Key "TRE-{tc.consignment_ref}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert KEY_LAMBDA_VERSIONS in metadata['parameters']['TRE'], f'Key "{KEY_LAMBDA_VERSIONS}" key is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_bagit_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_bagit_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_files_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_files_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_parser_input in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_parser_input}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_parser in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_parser}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_ed_int in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_ed_int}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert ct.environment.lambda_name_slack_alerts in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_slack_alerts}" is not in JSON metadata file "{tc.tar_metadata_file}"'
     logger.info('validate_metadata_keys_common end')
 
 
-def validate_metadata_keys(metadata: dict, tc:TestConsignment):
+def validate_metadata_keys(metadata: dict, tc:TestConsignment, ct: ConsignmentTester):
     logger.info('validate_metadata_keys start')
-    validate_metadata_keys_common(metadata=metadata, tc=tc)
-    assert metadata['parameters']['TRE']['payload']['log'] == 'parser.log', f'Did not find "parser.log" entry in JSON metadata file {tc.tar_metadata_file}'
+    validate_metadata_keys_common(metadata=metadata, tc=tc, ct=ct)
+    assert metadata['parameters']['TRE']['payload']['log'] == 'parser.log', f'Did not find "parser.log" entry in JSON metadata file "{tc.tar_metadata_file}"'
     logger.info('validate_metadata_keys end')
 
 

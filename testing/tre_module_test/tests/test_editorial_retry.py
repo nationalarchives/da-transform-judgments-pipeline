@@ -67,7 +67,7 @@ def verify_editorial_retry_ok_path(
     save_url_to_file(url=presigned_url, output_file=tgz)
     metadata_json = get_file_from_tar_as_json(tar=tgz, file=tc.tar_metadata_file)
     logger.info(f'metadata_json={metadata_json}')
-    validate_metadata_keys(metadata=metadata_json, tc=tc)
+    validate_metadata_keys(metadata=metadata_json, tc=tc, ct=ct)
     logger.info('verify_editorial_retry_ok_path end')
 
 
