@@ -10,7 +10,8 @@ import pprint
 pp = pprint.PrettyPrinter(indent=2, sort_dicts=False)
 
 def create_presigned_url(bucket_name, object_name, expiration=3600):
-    bucket_name = os.environ['TESTDATA_BUCKET']
+    # bucket_name = os.environ['TESTDATA_BUCKET']
+    bucket_name = "dev-te-testdata"
     object_name = "parser_test_docs/test.docx"
     # Generate a presigned URL for the S3 object
     # The response contains the presigned URL
@@ -22,17 +23,18 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
             ExpiresIn=expiration)
 
 
-url = create_presigned_url('BUCKET_NAME', 'OBJECT_NAME')
-
 # Prepare parser input with test document pre-signed url
-bucket_name = os.environ['TESTDATA_BUCKET']
+url = create_presigned_url('BUCKET_NAME', 'OBJECT_NAME')
+# bucket_name = os.environ['TESTDATA_BUCKET']
+bucket_name = "dev-te-testdata"
+consignment_reference = "TDR-2022-CF6L"
 parser_input = {
     "parser-inputs": {
-        "consignment-reference": "TDR-2022-CF6L",
+        "consignment-reference": consignment_reference,
         "s3-bucket": bucket_name,
         "document-url": url,
         "attachment-urls": [],
-        "s3-output-prefix": "parsed/judgment/TDR-2022-CF6L/0/"
+        "s3-output-prefix": "test-parsed/judgment/"+consignment_reference+"/"
     }
 }
 pp.pprint(parser_input)
