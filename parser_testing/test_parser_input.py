@@ -1,12 +1,17 @@
+import imp
 import json
 from json.tool import main
 import logging
+from textwrap import indent
 import boto3
+import os
 from botocore.exceptions import ClientError
+import pprint
+pp = pprint.PrettyPrinter(indent=2, sort_dicts=False)
 
 def create_presigned_url(bucket_name, object_name, expiration=3600):
-    bucket_name = "dev-te-testdata"
-    object_name = "parser_test_docs/AUTONOMY COMPOSITE PART A FINAL AS SEALED NOON.docx"
+    bucket_name = os.environ['TESTDATA_BUCKET']
+    object_name = "parser_test_docs/test.docx"
     # Generate a presigned URL for the S3 object
     # The response contains the presigned URL
     s3_client = boto3.client('s3')
@@ -20,16 +25,17 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
 url = create_presigned_url('BUCKET_NAME', 'OBJECT_NAME')
 
 # Prepare parser input with test document pre-signed url
+bucket_name = os.environ['TESTDATA_BUCKET']
 parser_input = {
     "parser-inputs": {
         "consignment-reference": "TDR-2022-CF6L",
-        "s3-bucket": "dev-te-testdata",
+        "s3-bucket": bucket_name,
         "document-url": url,
         "attachment-urls": [],
         "s3-output-prefix": "parsed/judgment/TDR-2022-CF6L/0/"
     }
 }
-print(parser_input)
+pp.pprint(parser_input)
 
 # Invoke parser lambda to test
 
@@ -39,15 +45,9 @@ parser_response = client.invoke(
     Payload= json.dumps(parser_input),
 
 )
-parser_output = json.load(parser_response['Payload'])
 
+
+parser_output = json.load(parser_response['Payload'])
+pp.pprint(parser_output)
 # Check if parser outputs contain any error
 assert len(parser_output["parser-outputs"]["error-messages"]) < 1
-
-
-def main():
-    print("Hello")
-
-    
-if __name__ == "__main__":
-    main()
