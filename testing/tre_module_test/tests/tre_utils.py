@@ -84,7 +84,7 @@ def validate_metadata_keys_common(metadata: dict, tc: TestConsignment, ct: Consi
     assert 'PARSER' in metadata['parameters'], f'Key "PARSER" is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert 'TDR' in metadata['parameters'], f'Key "TDR" key is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert f'TRE-{tc.consignment_ref}' in metadata['parameters']['TRE']['reference'], f'Key "TRE-{tc.consignment_ref}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert KEY_LAMBDA_VERSIONS in metadata['parameters']['TRE'], f'Key "{KEY_LAMBDA_VERSIONS}" key is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert KEY_LAMBDA_VERSIONS in metadata['parameters']['TRE'], f'Key "{KEY_LAMBDA_VERSIONS}" is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert ct.environment.lambda_name_bagit_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_bagit_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert ct.environment.lambda_name_files_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_files_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert ct.environment.lambda_name_parser_input in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_parser_input}" is not in JSON metadata file "{tc.tar_metadata_file}"'
