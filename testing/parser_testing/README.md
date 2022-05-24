@@ -45,7 +45,7 @@ To execute the parser test script:
     does not have a parser error. 
 
 Parser outputs for each test run are grouped under a timestamped directory;
-for example, here are 4 test run folders:
+for example:
 
 ```bash
 $ aws s3 ls "${PARSER_TEST_S3_BUCKET}/parser/output-tmp/"
