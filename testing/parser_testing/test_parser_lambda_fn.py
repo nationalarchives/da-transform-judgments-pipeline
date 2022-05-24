@@ -9,7 +9,7 @@ Requires the following environment variables be set:
 * PARSER_TEST_LAMBDA            : The name of the parser lambda function to test
 """
 import logging
-from s3_lib import common_lib
+import os
 import boto3
 import json
 from datetime import datetime, timezone
@@ -27,31 +27,27 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+def get_env_var(env_var_name):
+    logger.info(f'get_env_var start: env_var_name={env_var_name}')
+    if env_var_name not in os.environ:
+        raise ValueError(f'Environment variable "{env_var_name}" is not set')
+    value = os.environ[env_var_name]
+    if len(value) == 0:
+        raise ValueError(f'Environment variable "{env_var_name}" is empty')
+    logger.info(f'get_env_var return: {env_var_name}={value}')
+    return value
+
+
 class ParserTester():
     init_ts = datetime.now(tz=timezone.utc)
 
-    s3_bucket = common_lib.get_env_var(
-            'PARSER_TEST_S3_BUCKET', must_exist=True, must_have_value=True)
-
-    # e.g. 'parser/ok/'
-    s3_path_test_data_ok = common_lib.get_env_var(
-            'PARSER_TEST_S3_PATH_DATA_OK', must_exist=True, must_have_value=True)
-
-    # e.g. 'parser/fail/'
-    s3_path_test_data_fail = common_lib.get_env_var(
-            'PARSER_TEST_S3_PATH_DATA_FAIL', must_exist=True, must_have_value=True)
-
-    # e.g. 'parser/output/'
-    s3_path_parser_output = common_lib.get_env_var(
-            'PARSER_TEST_S3_PATH_OUTPUT', must_exist=True, must_have_value=True) + f'{init_ts.isoformat()}/'
-
-    # e.g. '.docx'
-    testdata_suffix = common_lib.get_env_var(
-            'PARSER_TEST_TESTDATA_SUFFIX', must_exist=True, must_have_value=True)
-
-    # e.g. 'test_judgment_parser'
-    test_lambda = common_lib.get_env_var(
-            'PARSER_TEST_LAMBDA', must_exist=True, must_have_value=True)
+    s3_bucket = get_env_var('PARSER_TEST_S3_BUCKET')
+    s3_path_test_data_ok = get_env_var('PARSER_TEST_S3_PATH_DATA_OK')  # e.g. 'parser/ok/'
+    s3_path_test_data_fail = get_env_var('PARSER_TEST_S3_PATH_DATA_FAIL')  # e.g. 'parser/fail/'
+    s3_path_parser_output = get_env_var('PARSER_TEST_S3_PATH_OUTPUT')  # e.g. 'parser/output/'
+    s3_path_parser_output += f'{init_ts.isoformat()}/'  # Group test outputs in timestamped folder
+    testdata_suffix = get_env_var('PARSER_TEST_TESTDATA_SUFFIX')  # e.g. '.docx'
+    test_lambda = get_env_var('PARSER_TEST_LAMBDA')  # e.g. 'test_judgment_parser'
 
     s3_presigned_url_expiry = 60
     s3_resource = boto3.resource('s3')
@@ -161,7 +157,7 @@ class ParserTester():
         result_list_test_fail = []
 
         # Test documents that should pass
-        logger.info('Running tests for documents that should parse')
+        logger.info('Testing documents that should parse successfully')
         for s3_path in self.docx_files_ok:
             ran_ok, result = self.run_test(
                     s3_path=s3_path,
@@ -175,7 +171,7 @@ class ParserTester():
                 result_list_test_fail.append(record)
 
         # Test documents that should fail
-        logger.info('Running tests for documents that should fail to parse')
+        logger.info('Testing documents that should fail to parse')
         for s3_path in self.docx_files_fail:
             ran_ok, result = self.run_test(
                     s3_path=s3_path,
@@ -192,18 +188,26 @@ class ParserTester():
 
 
 def main():
-    logger.info(f'main start')
+    ts_start = datetime.now(tz=timezone.utc)
+    logger.info(f'main start: {ts_start.isoformat()}')
     pt = ParserTester()
     result_list_ok, result_list_fail = pt.run_tests()
     logger.info(f'result_list_ok={result_list_ok}')
     logger.info(f'result_list_fail={result_list_fail}')
 
     if len(result_list_fail) > 0:
-        raise ValueError('Parser regression tests failed: '
+        raise ValueError('Parser test failed; unexpected document result: '
                 f'result_list_ok={result_list_ok} '
                 f'result_list_fail={result_list_fail}')
 
-    logger.info('main end')
+    if len(result_list_fail) + len(result_list_ok) == 0:
+        raise ValueError('Parser test failed; no documents were tested')
+
+    ts_end = datetime.now(tz=timezone.utc)
+    logger.info(f'Test duration: {ts_end - ts_start}')
+    logger.info('############################################################')
+    logger.info('###                 Parser test ran OK                   ###')
+    logger.info('############################################################')
 
 
 if __name__ == "__main__":

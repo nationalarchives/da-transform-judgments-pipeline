@@ -5,7 +5,6 @@ main() {
     return 1
   fi
 
-  export PYTHONPATH='../../lambda_functions/te-editorial-integration:../../s3_lib'
   export PARSER_TEST_S3_BUCKET="${1}"
   export PARSER_TEST_S3_PATH_DATA_OK='parser/ok/'
   export PARSER_TEST_S3_PATH_DATA_FAIL='parser/fail/'
