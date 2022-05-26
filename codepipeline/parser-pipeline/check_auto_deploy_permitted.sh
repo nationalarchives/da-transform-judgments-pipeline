@@ -18,7 +18,7 @@ main() {
 
   local tmp
   tmp="$(echo "${v_old}" | awk '{split($0, values, "."); print values[1]}')"
-  local v_old_major="${tmp:-0}"  
+  local v_old_major="${tmp:-0}"
   tmp="$(echo "${v_old}" | awk '{split($0, values, "."); print values[2]}')"
   local v_old_minor="${tmp:-0}"
   tmp="$(echo "${v_old}" | awk '{split($0, values, "."); print values[3]}')"
@@ -32,7 +32,7 @@ main() {
   tmp="$(echo "${v_new}" | awk '{split($0, values, "."); print values[3]}')"
   local v_new_patch="${tmp:-0}"
   local v_new_parsed="${v_new_major}.${v_new_minor}.${v_new_patch}"
-  
+
   local version_msg="(${v_old_parsed} -> ${v_new_parsed})"
 
   printf 'v_old_in=%s v_new_in=%s\n' "${v_old_in}" "${v_new_in}"
@@ -54,7 +54,7 @@ main() {
     printf 'Automatic downgrade of parser version is not permitted %s\n' "${version_msg}"
     return 1
   fi
-  
+
   printf 'Automatic upgrade of parser version may proceed %s\n' "${version_msg}"
 }
 

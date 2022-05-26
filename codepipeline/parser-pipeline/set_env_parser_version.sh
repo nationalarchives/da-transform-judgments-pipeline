@@ -13,7 +13,7 @@ main() {
 
   printf 'parameter_name=%s new_parser_version=%s\n' \
       "${parameter_name}" "${new_parser_version}"
-  
+
   printf 'Getting parameter %s ...\n' "${parameter_name}"
   local aws_parameter_store_value
   aws_parameter_store_value="$(
@@ -57,13 +57,13 @@ main() {
     printf '%s' "${aws_parameter_store_value}" | \
     sed -e "s/\(${str_find}\)[^\"]*/\1${new_parser_version}/"
   )"
-  #         s/                                                : search        
-  #           \(                                              : start group 1 
-  #                        \)                                 : end group 1   
-  #                          [^\"]*                           : match until " 
-  #                                /                          : replacement   
-  #                                 \1                        : group 1       
-  #                                                        /  : end           
+  #         s/                                                : search
+  #           \(                                              : start group 1
+  #                        \)                                 : end group 1
+  #                          [^\"]*                           : match until "
+  #                                /                          : replacement
+  #                                 \1                        : group 1
+  #                                                        /  : end
   # https://stackoverflow.com/a/49847921
 
   printf '\nnew_value\n---------\n%s\n\n' "${new_value}"
