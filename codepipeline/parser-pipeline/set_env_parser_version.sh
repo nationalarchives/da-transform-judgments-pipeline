@@ -52,7 +52,7 @@ main() {
   fi
 
   # Use sed to replace only tre_run_judgment_parser version
-  str_find='tre_run_judgment_parser = "'
+  local str_find='tre_run_judgment_parser = "'
   new_value="$(
     printf '%s' "${aws_parameter_store_value}" | \
     sed -e "s/\(${str_find}\)[^\"]*/\1${new_parser_version}/"
@@ -74,9 +74,11 @@ main() {
     --value "${new_value}" \
     --overwrite;
   then
-    printf 'Parameter %s has been updated\n' "${parameter_name}"
+    printf 'Parameter %s has been updated from %s to %s\n' \
+        "${parameter_name}" "${current_parser_version}" "${new_parser_version}"
   else
-    printf 'Error updating parameter %s\n' "${parameter_name}"
+    printf 'Error updating parameter %s from %s to %s\n' \
+        "${parameter_name}" "${current_parser_version}" "${new_parser_version}"
     return 1
   fi
 }
