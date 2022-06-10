@@ -2,10 +2,10 @@
 set -e
 
 main() {
-  if [ $# -lt 8 ] || [ $# -gt 9 ]; then
+  if [ $# -lt 9 ] || [ $# -gt 10 ]; then
     echo "Usage: s3_bucket_in s3_object_bagit s3_object_sha \
 consignment_reference consignment_type number_of_retries \
-presign_url_expiry_secs s3_bucket_out [path_prefix]"
+presign_url_expiry_secs s3_bucket_out sfn_arn [path_prefix]"
     return 1
   fi
 
@@ -17,9 +17,10 @@ presign_url_expiry_secs s3_bucket_out [path_prefix]"
   number_of_retries="$6"
   preshared_url_timeout="$7"
   s3_bucket_out="$8"
+  sfn_arn="$9"
 
-  export PYTHONPATH=../../lambda_functions/tre-bagit-checksum-validation:../../lambda_functions/tre-files-checksum-validation:../../s3_lib
-  export S3_TEMPORARY_BUCKET="${s3_bucket_out}"
+  export PYTHONPATH=../../lambda_functions/tre-step-function-trigger:../../s3_lib
+  export SFN_ARN="${sfn_arn}"
 
   event="$(../create_preshared_url_msg.sh \
     "${s3_bucket_in}" \
@@ -31,7 +32,7 @@ presign_url_expiry_secs s3_bucket_out [path_prefix]"
     "${preshared_url_timeout}")"
 
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
-  python3 test-bagit-then-files.py "${event}"
+  python3 test-step-function-trigger.py "${event}"
 }
 
 main "$@"

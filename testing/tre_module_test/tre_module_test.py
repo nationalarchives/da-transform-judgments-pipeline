@@ -245,7 +245,7 @@ def test_tdr_bagit_function_error(ct: ConsignmentTester):
     """
     logger.info('### test_tdr_bagit_function_error start ###################')
     test_start_datetime = datetime.now(tz=timezone.utc)
-    cr = 'TEST-FUNCTION-ERROR-PATH-BAGIT'
+    cr = 'TEST-FUNC-ERR-PATH-BAGIT'
     sqs_result = ct.send_sqs_message_tdr(sqs_message=f'{{"consignment-reference": "{cr}"}}')
     logger.info(f'sqs_result={sqs_result}')
     executions = ct.get_step_function_executions(

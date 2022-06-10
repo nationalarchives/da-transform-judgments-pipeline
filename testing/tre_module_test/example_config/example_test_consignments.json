@@ -1,5 +1,5 @@
 {
-    "test-editorial-retry": {
+    "shared-consignment": {
         "consignment-ref": "?",
         "s3-key-bagit": "consignments/judgements/?.tar.gz",
         "s3-key-checksum": "consignments/judgements/?.tar.gz.sha256",
