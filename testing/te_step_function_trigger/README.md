@@ -11,18 +11,17 @@ To run step `tre-step-function-trigger`:
 2. Ensure required packages are installed (e.g. `pip3 install requests`)
 3. Ensure a Bagit `.tar.gz` file and a corresponding `.tar.gz.sha256` file
     has been copied to an arbitrary s3 bucket
-4. Identify an arbitrary s3 bucket for the process output    
-5. Using the bucket and object names above plus the STATE_MACHINE_ARN - run the following script:
+4. Using the bucket and object names above plus the "tdr-in SQS ARN" and the "STATE_MACHINE_ARN" - run the following script:
 
     ```bash
     ./run.sh \
         "${s3_bucket_in}" \
-        "${s3_key_bagit}" \
-        "${s3_key_manifest}" \
+        "${s3_object_bagit}" \
+        "${s3_object_sha}" \
         "${consignment_reference}" \
+        "${sqs_arn}" \
+        "${sfn_arn}" \
         "${consignment_type}" \
         "${number_of_retries}" \
-        "${preshared_url_timeout}" \
-        "${s3_bucket_out}" \
-        "${sfn_arn}"
+        "${presign_url_expiry_secs}"
     ```

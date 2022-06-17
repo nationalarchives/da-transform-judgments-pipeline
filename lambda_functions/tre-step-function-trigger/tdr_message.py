@@ -28,16 +28,16 @@ def lambda_handler(event, context):
     else:
         retry = "X"
 
-    eventSource = ""
+    event_source = ""
     if 'eventSourceARN' in record:
         arn = record['eventSourceARN']
-        eventSource = arn.split(':')[5]
+        event_source = arn.split(':')[5]
     else:
-        eventSource = "X"
+        event_source = "X"
 
     unique_id = uuid.uuid4().hex
 
-    name = "tre-"+ prefix + "-" + retry + "-" + eventSource + "-" + unique_id
+    name = "tre-" + prefix + "-" + retry + "-" + event_source + "-" + unique_id
 
     response = client.start_execution(
 		stateMachineArn = STATE_MACHINE_ARN,
