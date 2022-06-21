@@ -76,6 +76,14 @@ def get_file_from_tar_as_json(tar: str, file: str) -> json:
     return json.loads(get_file_from_tar_as_utf8(tar=tar, file=file))
 
 
+def lambda_version_present(metadata: dict, key_name: str) -> bool:
+    for d in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS]:
+        for k in d:
+            if k == key_name:
+                return True
+    return False
+
+
 def validate_metadata_keys_common(metadata: dict, tc: TestConsignment, ct: ConsignmentTester):
     logger.info('validate_metadata_keys_common start')
     assert 'producer' in metadata, f'Key "producer" is not in JSON metadata file "{tc.tar_metadata_file}"'
@@ -84,13 +92,15 @@ def validate_metadata_keys_common(metadata: dict, tc: TestConsignment, ct: Consi
     assert 'PARSER' in metadata['parameters'], f'Key "PARSER" is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert 'TDR' in metadata['parameters'], f'Key "TDR" key is not in JSON metadata file "{tc.tar_metadata_file}"'
     assert f'TRE-{tc.consignment_ref}' in metadata['parameters']['TRE']['reference'], f'Key "TRE-{tc.consignment_ref}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert KEY_LAMBDA_VERSIONS in metadata['parameters']['TRE'], f'Key "{KEY_LAMBDA_VERSIONS}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_bagit_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_bagit_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_files_check in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_files_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_parser_input in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_parser_input}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_parser in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_parser}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_ed_int in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_ed_int}" is not in JSON metadata file "{tc.tar_metadata_file}"'
-    assert ct.environment.lambda_name_slack_alerts in metadata['parameters']['TRE'][KEY_LAMBDA_VERSIONS], f'Key "{ct.environment.lambda_name_slack_alerts}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    tre_version_key = f'{ct.environment.env}-tre-version'
+    assert tre_version_key in metadata['parameters']['TRE'], f'Key "{tre_version_key}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert KEY_LAMBDA_VERSIONS in metadata['parameters']['TRE'], f'Key "{KEY_LAMBDA_VERSIONS}" is not in JSON metadata file "{tc.tar_metadata_file}"'    
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_bagit_check), f'Key "{ct.environment.lambda_name_bagit_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_files_check), f'Key "{ct.environment.lambda_name_files_check}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_parser_input), f'Key "{ct.environment.lambda_name_parser_input}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_parser), f'Key "{ct.environment.lambda_name_parser}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_ed_int), f'Key "{ct.environment.lambda_name_ed_int}" is not in JSON metadata file "{tc.tar_metadata_file}"'
+    assert lambda_version_present(metadata=metadata, key_name=ct.environment.lambda_name_slack_alerts), f'Key "{ct.environment.lambda_name_slack_alerts}" is not in JSON metadata file "{tc.tar_metadata_file}"'
     logger.info('validate_metadata_keys_common end')
 
 
