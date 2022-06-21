@@ -19,7 +19,7 @@ number_of_retries presigned_url_expiry_secs template"
     return 1
   fi
 
-  export PYTHONPATH='../../lambda_functions/te-editorial-integration:../../s3_lib'
+  export PYTHONPATH='../../lambda_functions/tre-editorial-integration:../../s3_lib'
 
   local s3_bucket="$1"
   local s3_path_prefix="$2"
@@ -30,14 +30,17 @@ number_of_retries presigned_url_expiry_secs template"
 
   export S3_BUCKET="${s3_bucket}"
   export S3_OBJECT_ROOT="${s3_path_prefix}"
-  export TE_PRESIGNED_URL_EXPIRY="$6"
-  export TE_VERSION_JSON='{
-  "int-te-version" : "0.0.0",
-  "text-parser-version" : "v0.0",
+  export TRE_ENV="foo"
+  export TRE_PREFIX="tre"
+  export TRE_PRESIGNED_URL_EXPIRY="$6"
+  export TRE_VERSION="1.2.3"
+  export TRE_LAMBDA_VERSIONS='{
   "lambda-functions-version": [
-    {"int-te-bagit-checksum-validation" : "0.0.0"},
-    {"int-te-files-checksum-validation" : "0.0.0"},
-    {"int-text-parser-version" : "v0.0"}
+    {"bar-tre-bagit-checksum-validation" : "0.0.1"},
+    {"bar-tre-files-checksum-validation" : "0.0.2"},
+    {"bar-text-prepare-parser-input" : "0.0.3"},
+    {"bar-text-run-judgments-parser" : "v0.5.4"},
+    {"bar-text-slack-alerts" : "0.0.5"}
   ]
 }'
 
