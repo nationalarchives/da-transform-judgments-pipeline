@@ -27,7 +27,7 @@ env_tre_env = common_lib.get_env_var('TRE_ENV', must_exist=True, must_have_value
 env_tre_prefix = common_lib.get_env_var('TRE_PREFIX', must_exist=True, must_have_value=True)
 env_tre_presigned_url_expiry = common_lib.get_env_var('TRE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
 env_tre_version = common_lib.get_env_var('TRE_VERSION', must_exist=True, must_have_value=True)
-env_tre_lambda_versions = json.loads(common_lib.get_env_var('TRE_LAMBDA_VERSIONS', must_exist=True, must_have_value=True))
+env_tre_lambda_versions = json.loads(common_lib.get_env_var('TRE_VERSION_JSON', must_exist=True, must_have_value=True))
 
 KEY_CONTEXT = 'context'
 KEY_NUMBER_OF_RETRIES='number-of-retries'

@@ -34,12 +34,12 @@ number_of_retries presigned_url_expiry_secs template"
   export TRE_PREFIX="tre"
   export TRE_PRESIGNED_URL_EXPIRY="$6"
   export TRE_VERSION="1.2.3"
-  export TRE_LAMBDA_VERSIONS='{
+  export TRE_VERSION_JSON='{
   "lambda-functions-version": [
     {"bar-tre-bagit-checksum-validation" : "0.0.1"},
     {"bar-tre-files-checksum-validation" : "0.0.2"},
     {"bar-text-prepare-parser-input" : "0.0.3"},
-    {"bar-text-run-judgments-parser" : "v0.5.4"},
+    {"bar-text-run-judgment-parser" : "v0.5.4"},
     {"bar-text-slack-alerts" : "0.0.5"}
   ]
 }'
