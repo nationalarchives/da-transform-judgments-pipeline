@@ -85,19 +85,7 @@ def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
     ValueError is raised.
     """
     logger.info('verify_checksum start')
-
-    s3_client = boto3.client('s3')
-    s3_object = s3_client.get_object(Bucket=bucket_name, Key=object_name)
-    hashlib_sha256 = hashlib.sha256()
-    stream = s3_object['Body']._raw_stream
-    chunk = stream.read(READ_BLOCK_SIZE)
-    logger.debug(f'len(chunk)={len(chunk)}')
-    while chunk != b'':
-        logger.debug(f'len(chunk)={len(chunk)}')
-        hashlib_sha256.update(chunk)
-        chunk = stream.read(READ_BLOCK_SIZE)
-
-    hex_digest = hashlib_sha256.hexdigest()
+    hex_digest = get_s3_object_checksum(bucket_name, object_name)
     if hex_digest != expected_checksum:
         raise ValueError(
             f'Calculated checksum "{hex_digest}" does not match expected '
@@ -109,6 +97,26 @@ def verify_s3_object_checksum(bucket_name, object_name, expected_checksum):
         f'"{bucket_name}"')
 
     logger.info('verify_checksum end')
+
+def get_s3_object_checksum(bucket_name, object_name):
+    """
+    Returns the SHA 256 checksum of `object_name` in `bucket_name`
+    """
+    logger.info('get_checksum start')
+    s3_client = boto3.client('s3')
+    s3_object = s3_client.get_object(Bucket=bucket_name, Key=object_name)
+    hashlib_sha256 = hashlib.sha256()
+    stream = s3_object['Body']._raw_stream
+    chunk = stream.read(READ_BLOCK_SIZE)
+    logger.debug(f'len(chunk)={len(chunk)}')
+    while chunk != b'':
+        logger.debug(f'len(chunk)={len(chunk)}')
+        hashlib_sha256.update(chunk)
+        chunk = stream.read(READ_BLOCK_SIZE)
+    hex_digest = hashlib_sha256.hexdigest()
+    logger.info(f'Calculated checksum "{hex_digest}" for object "{object_name}" in bucket "{bucket_name}"')
+    logger.info('get_checksum end')
+    return hex_digest
 
 def verify_s3_manifest_checksums(bucket_name, bagit_name):
     """

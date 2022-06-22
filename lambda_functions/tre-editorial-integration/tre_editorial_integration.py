@@ -3,6 +3,7 @@ import logging
 from s3_lib import common_lib
 from s3_lib import object_lib
 from s3_lib import tar_lib
+from s3_lib import checksum_lib
 import json
 import boto3
 
@@ -54,9 +55,11 @@ FILE_TRE_METADATA = 'metadata.json'
 KEY_CONSIGNMENT_TYPE='consignment-type'
 S3_SEP = '/'
 KEY_TAR_GZ = 'tar-gz'
+KEY_SHA256 = '.sha256'
 KEY_BUCKET = 'bucket'
 KEY_KEY = 'key'
 KEY_PRESIGNED_TAR_GZ_URL = 's3-folder-url'
+KEY_PRESIGNED_TAR_GZ_SHA256_URL = 's3-sha256-url'
 KEY_EDITORIAL_OUTPUT = 'editorial-output'
 
 def handler(event, context):
@@ -284,11 +287,24 @@ class ParserHandler:
             to_tar_list,
             output_tar_gz,
             f'{self.parser_inputs[KEY_CONSIGNMENT_REF]}/')
-        
+
+        # get the checksum of output_tar_gz and write it to output_tar_gz.sha256
+        tar_gz_checksum = checksum_lib.get_s3_object_checksum(self.parser_inputs[KEY_S3_BUCKET], output_tar_gz)
+        object_lib.string_to_s3_object(
+            f'{tar_gz_checksum} {PRODUCER_NAME}-{self.parser_inputs[KEY_CONSIGNMENT_REF]}.tar.gz',
+            self.parser_inputs[KEY_S3_BUCKET],
+            output_tar_gz + KEY_SHA256)
+
         # Generate a presigned URL for the output tar.gz file
         presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
             self.parser_inputs[KEY_S3_BUCKET],
             output_tar_gz,
+            env_tre_presigned_url_expiry)
+
+        # Generate a presigned URL for the output tar.gz.sha256 file
+        presigned_tar_gz_sha256_url = object_lib.get_s3_object_presigned_url(
+            self.parser_inputs[KEY_S3_BUCKET],
+            output_tar_gz + KEY_SHA256,
             env_tre_presigned_url_expiry)
 
         # Create the output message
@@ -296,6 +312,7 @@ class ParserHandler:
             KEY_EDITORIAL_OUTPUT: {
                 'consignment-reference': self.parser_inputs[KEY_CONSIGNMENT_REF],
                 KEY_PRESIGNED_TAR_GZ_URL: presigned_tar_gz_url,
+                KEY_PRESIGNED_TAR_GZ_SHA256_URL: presigned_tar_gz_sha256_url,
                 'consignment-type': self.context[KEY_CONSIGNMENT_TYPE],
                 'number-of-retries': self.number_of_editorial_retries
             },
@@ -499,14 +516,19 @@ class RetryHandler:
         s3_object = s3c.get_object(Bucket=bucket, Key=key)
         output_message = json.loads(s3_object['Body'].read())
 
-        # Regenerate presigned URL
+        # Regenerate presigned URLS
         presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
             bucket=output_message[KEY_TAR_GZ][KEY_BUCKET],
             key=output_message[KEY_TAR_GZ][KEY_KEY],
             expiry=env_tre_presigned_url_expiry)
+        presigned_tar_gz_sha256_url = object_lib.get_s3_object_presigned_url(
+            bucket=output_message[KEY_TAR_GZ][KEY_BUCKET],
+            key=output_message[KEY_TAR_GZ][KEY_KEY] + KEY_SHA256,
+            expiry=env_tre_presigned_url_expiry)
 
-        # Update output message with new presigned URL and retry counter
+        # Update output message with new presigned URLs and retry counter
         output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_URL] = presigned_tar_gz_url
+        output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_SHA256_URL] = presigned_tar_gz_sha256_url
         output_message[KEY_EDITORIAL_OUTPUT][KEY_NUMBER_OF_RETRIES] = expected_ed_retry
 
         # Save new output message (for any subsequent retries to update again)
