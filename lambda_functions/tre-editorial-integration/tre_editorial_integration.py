@@ -22,9 +22,12 @@ class TEEditorialIntegrationError(Exception):
     Used to indicate a te_editorial_integration step specific error condition.
     """
 
-# Get environment variable values
-env_version_info = json.loads(common_lib.get_env_var('TE_VERSION_JSON', must_exist=True, must_have_value=True))
-env_presigned_url_expiry = common_lib.get_env_var('TE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
+# Get environment variable values here to fail fast if not present
+env_tre_env = common_lib.get_env_var('TRE_ENV', must_exist=True, must_have_value=True)
+env_tre_prefix = common_lib.get_env_var('TRE_PREFIX', must_exist=True, must_have_value=True)
+env_tre_presigned_url_expiry = common_lib.get_env_var('TRE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
+env_tre_version = common_lib.get_env_var('TRE_VERSION', must_exist=True, must_have_value=True)
+env_tre_lambda_versions = json.loads(common_lib.get_env_var('TRE_VERSION_JSON', must_exist=True, must_have_value=True))
 
 KEY_CONTEXT = 'context'
 KEY_NUMBER_OF_RETRIES='number-of-retries'
@@ -286,7 +289,7 @@ class ParserHandler:
         presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
             self.parser_inputs[KEY_S3_BUCKET],
             output_tar_gz,
-            env_presigned_url_expiry)
+            env_tre_presigned_url_expiry)
 
         # Create the output message
         output_message = {
@@ -371,16 +374,23 @@ class ParserHandler:
 
         parser_content = parser_metadata.copy()
         parser_content['error-messages'] = self.parser_outputs[KEY_ERROR_MESSAGES].copy()
-        
+
+        logger.info(f'env_tre_version={env_tre_version}')
+        logger.info(f'env_tre_lambda_versions={env_tre_lambda_versions}')
+
+        KEY_PARAMETERS = 'parameters'
+
         output =  {
             'producer': {
                 'name': PRODUCER_NAME,
                 'process': 'transform',
-                'type': self.context[KEY_CONSIGNMENT_TYPE]
+                'type': self.context[KEY_CONSIGNMENT_TYPE],
+                'environment': env_tre_env
             },
-            'parameters': {
+            KEY_PARAMETERS: {
                 PRODUCER_NAME: {
                     'reference': PRODUCER_NAME + '-' + self.parser_inputs[KEY_CONSIGNMENT_REF],
+                    f'{env_tre_env}-{env_tre_prefix}-version': env_tre_version,
                     'payload': {
                         'filename': self.context[KEY_JUDGMENT_DOC],
                         'xml': self.parser_outputs[KEY_XML],
@@ -393,6 +403,11 @@ class ParserHandler:
                 'TDR': bagit_info.copy()
             }
         }
+
+        # Add keys from TRE_LAMBDA_VERSIONS (currently just 'lambda-functions-version')
+        for key in env_tre_lambda_versions:
+            logger.info(f'Adding key {KEY_PARAMETERS}.{PRODUCER_NAME}.{key}')
+            output[KEY_PARAMETERS][PRODUCER_NAME][key] = env_tre_lambda_versions[key]
 
         logger.info('build_tre_metadata return; output={output}')
         return output
@@ -488,7 +503,7 @@ class RetryHandler:
         presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
             bucket=output_message[KEY_TAR_GZ][KEY_BUCKET],
             key=output_message[KEY_TAR_GZ][KEY_KEY],
-            expiry=env_presigned_url_expiry)
+            expiry=env_tre_presigned_url_expiry)
 
         # Update output message with new presigned URL and retry counter
         output_message[KEY_EDITORIAL_OUTPUT][KEY_PRESIGNED_TAR_GZ_URL] = presigned_tar_gz_url
