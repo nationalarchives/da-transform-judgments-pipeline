@@ -18,7 +18,7 @@ presign_url_expiry_secs s3_bucket_out [path_prefix]"
   preshared_url_timeout="$7"
   s3_bucket_out="$8"
 
-  export PYTHONPATH=../../lambda_functions/te-bagit-checksum-validation:../../lambda_functions/te-files-checksum-validation:../../s3_lib
+  export PYTHONPATH=../../lambda_functions/tre-bagit-checksum-validation:../../lambda_functions/tre-files-checksum-validation:../../s3_lib
   export S3_TEMPORARY_BUCKET="${s3_bucket_out}"
 
   event="$(../create_preshared_url_msg.sh \
