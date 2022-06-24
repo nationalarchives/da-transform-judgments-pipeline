@@ -10,4 +10,4 @@ event=sys.argv[1]
 context=None
 
 output = tre_editorial_integration.handler(json.loads(event), context)
-print(f'te_editorial_integration output:\n{json.dumps(output, indent=4)}')
+print(f'tre_editorial_integration output:\n{json.dumps(output, indent=4)}')
