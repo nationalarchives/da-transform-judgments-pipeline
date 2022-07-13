@@ -74,7 +74,7 @@ def handler(event, context):
         "s3-bagit-name": s3_bagit_name
     }
 
-    Unexpected errors propogate as exceptions.
+    Unexpected errors propagate as exceptions.
     """
     logger.info(f'handler start: event="{event}"')
 
