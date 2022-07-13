@@ -32,7 +32,7 @@ def handler(event, context):
     * untar s3://`s3-bucket`/`s3-bagit-name` in place with existing path prefix
     * verify checksums of extracted tar's root files using file tagmanifest-sha256.txt
     * verify checksums of extracted tar's data directory files using file manifest-sha256.txt
-    * verify the number of extracted files matches the numbers in the 2 manufest files
+    * verify the number of extracted files matches the numbers in the 2 manifest files
 
     Expected input event format:
     {
@@ -58,7 +58,7 @@ def handler(event, context):
         }
     }
 
-    Unexpected errors propogate as exceptions.
+    Unexpected errors propagate as exceptions.
     """
     logger.info(f'handler start: event="{event}"')
 
@@ -99,7 +99,7 @@ def handler(event, context):
         output[KEY_VALIDATED_FILES] = checksum_ok_list
 
         # Determine expected file counts (from manifest files)
-        manifest_root_count = len(checksum_ok_list['root'])  # not main manifiest itself
+        manifest_root_count = len(checksum_ok_list['root'])  # not main manifest itself
         manifest_data_count = len(checksum_ok_list['data'])
         # +1 file here as root manifest doesn't include itself (Catch-22...)
         manifests_total_count = 1 + manifest_root_count + manifest_data_count
