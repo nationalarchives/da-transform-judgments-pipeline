@@ -21,9 +21,9 @@
     [Creating An Example Input Message](#creating-an-example-input-message)
     below
 3. Submit the generated JSON message to your environment's respective input
-    queue (e.g. `non-prod` `dev-te-tdr-in`)
+    queue (e.g. `non-prod` `dev-tre-tdr-in`)
 4. Observe execution in the AWS console at `Step Functions -> State machines`
-    for the environment being tested (e.g. `non-prod` `dev-te-state-machine`)
+    for the environment being tested (e.g. `non-prod` `dev-tre-state-machine`)
 
 ## Automated Testing
 
@@ -31,8 +31,8 @@
 
 # Testing Code Locally
 
-* [te_editorial_integration/README.md](te_editorial_integration/README.md)
-* [te_bagit_then_files/README.md](te_bagit_then_files/README.md)
+* [tre_editorial_integration/README.md](te_editorial_integration/README.md)
+* [tre_bagit_then_files/README.md](te_bagit_then_files/README.md)
 
 # Appendices
 

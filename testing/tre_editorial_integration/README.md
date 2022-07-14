@@ -1,6 +1,6 @@
 # Testing
 
-To run step `te-editorial-integration`:
+To run step `tre-editorial-integration`:
 
 1. Enable a Python virtual environment; e.g. if this is configured at the
     project's root (e.g. with `python3 -m venv .venv`) use:
@@ -18,7 +18,7 @@ To run step `te-editorial-integration`:
     ./upload_test_data_to_s3.sh "${s3_bucket}"
     ```
 
-4. The following scripts execute the `te-editorial-integration` step locally
+4. The following scripts execute the `tre-editorial-integration` step locally
     to process the test data uploaded in step 3 above (ensure the same value
     is used for the `s3_bucket` variable).
 
