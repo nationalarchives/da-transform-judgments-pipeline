@@ -23,9 +23,16 @@ s3_lib_whl="$(basename "${s3_lib_whl_path}")"
 cp "${s3_lib_whl_path}" "${build_sub_dir}"
 
 # Create temporary requirements.txt and add build whl file's name
-tmp_build_requirements="${build_sub_dir}/tmp-build-requirements.txt"
-cp "${build_sub_dir}/requirements.txt" "${tmp_build_requirements}"
-printf '\n%s\n' "${s3_lib_whl}" >> "${tmp_build_requirements}"
+build_requirements="${build_sub_dir}/requirements.txt"
+if [ -f "${build_requirements}" ]; then
+    tmp_build_requirements="${build_sub_dir}/tmp-build-requirements.txt"
+    cp "${build_requirements}" "${tmp_build_requirements}"
+    printf '\n%s\n' "${s3_lib_whl}" >> "${tmp_build_requirements}"
+    printf 'Requirements file "%s" copied to "%s" and updated\n' \
+        "${build_requirements}" "${tmp_build_requirements}" 1>&2
+else
+    printf 'Requirements file "%s" not found\n' "${build_requirements}" 1>&2
+fi
 
 # Source Docker build environment variables
 # shellcheck source=/dev/null
