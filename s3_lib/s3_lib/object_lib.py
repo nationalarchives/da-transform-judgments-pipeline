@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import csv
 import logging
 import requests  # https://docs.python-requests.org/en/master/api/
 import hashlib  # https://docs.python.org/3/library/hashlib.html
@@ -226,6 +227,20 @@ def s3_object_to_dictionary(s3_bucket, s3_key, separator=':'):
     logger.info('s3_object_to_dictionary return')
     return dictionary
 
+
+def s3_object_to_csv(s3_bucket, s3_key):
+    """
+    Get s3 object `s3_key' in `s3_bucket` as csv.
+    """
+    logger.info(f's3_object_to_csv start: s3_bucket={s3_bucket} s3_key={s3_key}')
+    s3_client = boto3.client('s3')
+    s3o = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    reader = codecs.getreader(ENCODING_UTF8)
+    csv_data = csv.DictReader(reader(s3o['Body']))
+    logger.info('s3_object_to_csv return')
+    return csv_data
+
+
 def get_s3_object_presigned_url(bucket, key, expiry):
     """
     Return a preshared URL for `key` in `bucket` with the specified
@@ -257,3 +272,14 @@ def get_object(bucket, key):
         raise common_lib.S3LibError(
                 f'Unable to find key "{key}" in '
                 f'bucket "{bucket}". {str(e)}')
+
+
+def copy_object(from_bucket, from_key, to_bucket, to_key):
+    """
+    Copy S3 object `from_key` in `from_bucket` to S3 object `to_key` in `to_bucket`
+    """
+    logger.info(f'copy_object from_bucket={from_bucket} from_key={from_key} to_bucket={to_bucket} to_key={to_key}')
+    s3 = boto3.resource('s3')
+    from_bucket_and_key = from_bucket + '/' + from_key
+    s3.Object(to_bucket, to_key).copy_from(CopySource=from_bucket_and_key)
+
