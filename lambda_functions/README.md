@@ -2,7 +2,7 @@
 
 ## Building
 
-Pre-requisistes:
+Pre-requisites:
 
 * If the deploy to ECR option is used, the `aws` CLI must be configured and
     `${AWS_PROFILE}` must point to the correct target environment

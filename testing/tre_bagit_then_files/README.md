@@ -1,6 +1,6 @@
 # Testing
 
-To run step `te-bagit-checksum-validation` then `te-files-checksum-validation`:
+To run step `tre-bagit-checksum-validation` then `tre-files-checksum-validation`:
 
 1. Enable a Python virtual environment; e.g. if configured in project root use:
 
