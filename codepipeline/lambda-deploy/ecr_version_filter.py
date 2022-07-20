@@ -45,7 +45,7 @@ meg1.add_argument('--file', help='Read JSON from given file (instead of stdin)')
 meg1.add_argument('--json', help='Read JSON from given string (instead of stdin)')
 
 meg2 = parser.add_mutually_exclusive_group()
-meg2.add_argument('--all', action='store_true', help='List all versions')
+meg2.add_argument('--all', action='store_true',help='List all versions (one per line)')
 meg2.add_argument('--min', action='store_true', help='Print lowest version')
 meg2.add_argument('--max', action='store_true', help='Print highest version')
 
