@@ -8,6 +8,7 @@
 #   The "aws" CLI command must be available
 #   The AWS_PROFILE environment variable must be set for ECR access
 #   The "docker" CLI command must be available
+#   build.sh script
 set -e
 set -o pipefail
 
