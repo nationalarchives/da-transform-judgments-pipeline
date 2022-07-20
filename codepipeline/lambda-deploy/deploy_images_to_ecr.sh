@@ -141,6 +141,7 @@ function deploy_images_to_ecr() {
 
   printf 'deploy_images_to_ecr "%s" "%s"\n' "$0" "$1"
   # "set -o pipefail" added above to catch any errors here
+  local version_file_path
   find ../../lambda_functions \
       -mindepth 2 \
       -maxdepth 2 \
