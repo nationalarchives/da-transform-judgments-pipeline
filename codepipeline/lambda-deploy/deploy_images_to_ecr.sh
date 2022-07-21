@@ -34,24 +34,26 @@ function get_file_key_value() {
 }
 
 ######################################################################
-# Returns 0 (true) if image version is confirmed as not being in ECR;
-# non-zero if not, or an error occurs. Negation ("not_in") is
-# deliberate to avoid triggering uploads due to errors.
+# Returns 0 (true) if image version is confirmed as not being in ECR.
+# Returns 1 if image version is not in ECR. A return code of 2 or
+# higher indaicates an error occured. The negation in the function
+# name ("not_in") is deliberate to avoid inadvertent triggering of
+# uploads on an unexpected error (i.e. in subsequent "if" statements).
 function image_version_is_not_in_ecr() {
   if [ $# -ne 1 ]; then
     printf 'usage: image_version_is_in_ecr version_sh\n' 1>&2
-    return 1
+    return 2
   fi
 
   local version_sh="$1"
   local name
   if ! name="$(get_file_key_value "${version_sh}" 'docker_image_name')"; then
-    return 1
+    return 3
   fi
 
   local tag
   if ! tag="$(get_file_key_value "${version_sh}" 'docker_image_tag')"; then
-    return 1
+    return 4
   fi
 
   printf 'Loaded image details; name="%s" tag="%s"\n' "${name}" "${tag}"
@@ -62,7 +64,7 @@ function image_version_is_not_in_ecr() {
         --filter tagStatus=TAGGED)"
   then
     printf 'Error getting ECR image JSON for "%s"\n' "${name}" 1>&2
-    return 1
+    return 5
   fi
 
   local sep1='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
@@ -73,7 +75,7 @@ function image_version_is_not_in_ecr() {
   if ! tag_list="$(./ecr_version_filter.py --all --json "${ecr_img_json}")"
   then
     printf 'Error converting ECR image JSON to list\n' 1>&2
-    return 64
+    return 6
   fi
 
   printf 'tag_list:\n%s\n%s\n%s\n' "${sep1}" "${tag_list}" "${sep2}"  
