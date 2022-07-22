@@ -69,12 +69,9 @@ class AWSSession():
         logger.info(f'put_parameter_store_value : parameter={parameter} '
                     f'value={value}')
 
-        json_str = json.dumps(value, indent=2)
-        logger.info(f'json_str={json_str}')
-
         response = self.ssm.put_parameter(
             Name=parameter,
-            Value=json_str,
+            Value=value,
             Overwrite=True)
 
         logger.info(f'put_parameter response={response}')
@@ -206,14 +203,16 @@ def update_sf_lambda_versions(
         logger.info(f'sf_version_new={sf_version_new} (AWS={sf_version_aws})')
         tf_json[step_function_version_key] = sf_version_new
         logger.info(f'tf_json={tf_json}')
-        aws.put_parameter_store_value(parameter=parameter, value=tf_json)
+        aws.put_parameter_store_value(
+            parameter=parameter,
+            value=json.dumps(tf_json, indent=2))
 
         message = 'Completed OK, versions updated'.center(64)
         logger.info(f'{LINE}')
         logger.info(f'###{message}###')
         logger.info(f'{LINE}')
     else:
-        message = 'Completed OK, no changes were made'.center(64)
+        message = 'Completed OK, no changes made'.center(64)
         logger.info(f'{LINE}')
         logger.info(f'###{message}###')
         logger.info(f'{LINE}')
