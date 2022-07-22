@@ -193,8 +193,12 @@ def update_sf_lambda_versions(
             logger.info(f'JSON key {lambda_versions_key}.{lambda_name}')
             tf_json[lambda_versions_key][lambda_name] = disk_version
         else:
+            warn = ''
+            if (v_disk is not None) and (v_disk < v_aws):
+                warn = ' <- *** WARNING ***'
+
             logger.info(f'No update for "{lambda_name}": "{lambda_version}" '
-                        f'-> "{disk_version}"')
+                        f'-> "{disk_version}"{warn}')
 
     # If any lambda versions updated, update step function version, then AWS
     if version_changed:
