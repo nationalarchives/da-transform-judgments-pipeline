@@ -38,12 +38,12 @@ fi
 # shellcheck source=/dev/null
 . "${build_sub_dir}/version.sh"
 
-# Ignore any error from the following command (by adding || true)
+# Ignore errors from the following commands (by adding || true)
 docker rmi "${docker_image:?}" || true
 docker build --build-arg s3_lib_whl="${s3_lib_whl}" --tag "${docker_image}" "${build_sub_dir}"
-rm "${build_sub_dir}/${s3_lib_whl}"
-rm "${tmp_build_requirements}"
-docker images 
+rm "${build_sub_dir}/${s3_lib_whl}" || true
+rm "${tmp_build_requirements}" || true
+docker images
 
 # Exit with error at this point if AWS_REGION not passed to abort ECR updates
 if [[ -z "$2" ]]; then
