@@ -51,6 +51,7 @@ def await_codepipeline(
     execution_id: str,
     wait_seconds: int,
     attempt_count: int,
+    not_found_attempt_limit: int,
     aws_profile: str = None
 ):
     """
@@ -61,11 +62,16 @@ def await_codepipeline(
     IN_PROGRESS = 'InProgress'
 
     logger.info(f'await_codepipeline: name={name} '
-                f' execution_id={execution_id} wait_seconds={wait_seconds} '
-                f' attempt_count={attempt_count} aws_profile={aws_profile}')
+                f'execution_id={execution_id} wait_seconds={wait_seconds} '
+                f'attempt_count={attempt_count} '
+                f'not_found_attempt_limit={not_found_attempt_limit} '
+                f'aws_profile={aws_profile}')
 
     if attempt_count < 1:
         raise ValueError(f'attempt_count must be at least 1')
+    
+    if not_found_attempt_limit < 1:
+        raise ValueError(f'not_found_attempt_limit must be at least 1')
 
     aws = AWSSession(aws_profile=aws_profile)
     attempt = 1
@@ -74,23 +80,32 @@ def await_codepipeline(
             logger.info(f'Waiting {wait_seconds}s')
             time.sleep(wait_seconds)
 
-        logger.info(f'Checking status, attempt ({attempt}/{attempt_count})')
-        result = aws.get_pipeline_execution(
-            name=name,
-            execution_id=execution_id)
+        logger.info(f'Checking status, attempt {attempt}/{attempt_count}')
 
-        logger.info(f'result={result}')
+        try:
+            result = aws.get_pipeline_execution(
+                name=name,
+                execution_id=execution_id)
 
-        status = str(result['pipelineExecution']['status'])
-        logger.info(f'status={status}')
+            logger.info(f'result={result}')
 
-        if status.lower() == SUCCEEDED.lower():
-            logger.info('Pipeline completed successfully')
-            return
-        elif status.lower() == IN_PROGRESS.lower():
-            logger.info('Pipeline is still running')
-        else:
-            raise ValueError(f'Unexpected codepipeline status "{status}"')
+            status = str(result['pipelineExecution']['status'])
+            logger.info(f'status={status}')
+
+            if status.lower() == SUCCEEDED.lower():
+                logger.info('Pipeline completed successfully')
+                return
+            elif status.lower() == IN_PROGRESS.lower():
+                logger.info('Pipeline is still running')
+            else:
+                raise ValueError(f'Unexpected codepipeline status "{status}"')
+        except aws.codepipeline.exceptions.PipelineExecutionNotFoundException as e:
+            logger.info(f'PipelineExecutionNotFoundException '
+                        f'not_found_attempt_limit={not_found_attempt_limit} '
+                        f'attempt={attempt}')
+
+            if attempt >= not_found_attempt_limit:
+                raise e
 
         attempt += 1
 
@@ -108,6 +123,10 @@ parser.add_argument('--wait_seconds', nargs='?', default=5, type=int,
                     help='Seconds between checks')
 parser.add_argument('--attempt_count', nargs='?', default=60, type=int,
                     help='Number of times to check')
+# Add specific limit for PipelineExecutionNotFoundException:
+parser.add_argument('--not_found_attempt_limit',
+                    nargs='?', default=12, type=int,
+                    help='Number of times to retry if not found')
 parser.add_argument('--aws_profile', help='AWS_PROFILE to use')
 args = parser.parse_args()
 
@@ -116,5 +135,6 @@ await_codepipeline(
     execution_id=args.execution_id,
     wait_seconds=args.wait_seconds,
     attempt_count=args.attempt_count,
+    not_found_attempt_limit=args.not_found_attempt_limit,
     aws_profile=args.aws_profile if 'aws_profile' in args else None
 )
