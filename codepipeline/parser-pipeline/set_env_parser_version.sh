@@ -36,6 +36,7 @@ print(
     json.load(sys.stdin)['image_versions']['tre_run_judgment_parser']
 )"
   
+  local current_parser_version
   current_parser_version="$(
     printf '%s' "${aws_parameter_store_value}" \
       | python3 -c "${python_get_version}"
