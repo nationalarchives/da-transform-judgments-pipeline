@@ -64,7 +64,19 @@ function image_version_is_not_in_ecr() {
         --filter tagStatus=TAGGED)"
   then
     printf 'Error getting ECR image JSON for "%s"\n' "${name}" 1>&2
-    return 5
+    
+    # If error is just a "not found" execption, it's OK to return 0
+    local not_found_message="^.*RepositoryNotFoundException.*${name}"
+    if grep -q "${not_found_message}" <(aws ecr describe-images \
+        "--repository-name=lambda_functions/${name}" 2>&1)
+    then
+      printf '"%s" confirmed not present (ECR list output contains "%s")\n' \
+          "${name}" "${not_found_message}"
+      return 0
+    else
+      printf 'Unable to determine status of ECR image "%s"\n' "${name}" 1>&2
+      return 5
+    fi
   fi
 
   local sep1='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
