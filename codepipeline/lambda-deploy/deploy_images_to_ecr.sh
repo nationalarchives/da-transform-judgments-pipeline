@@ -68,7 +68,7 @@ function image_version_is_not_in_ecr() {
     # If error is just a "not found" execption, it's OK to return 0
     local not_found_message="^.*RepositoryNotFoundException.*${name}"
     if grep -q "${not_found_message}" <(aws ecr describe-images \
-        "--repository-name=lambda_functions/${name}" 2>&1)
+        "--repository-name=lambda_functions/${name}" 2>&1 >/dev/null)
     then
       printf '"%s" confirmed not present (ECR list output contains "%s")\n' \
           "${name}" "${not_found_message}"
