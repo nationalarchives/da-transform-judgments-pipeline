@@ -2,27 +2,30 @@ import json
 import boto3
 import uuid
 import os
+import pprint
 
 
 client = boto3.client('stepfunctions')
 STATE_MACHINE_ARN = os.environ['RAPB_ARN']
 def lambda_handler(event, context):
-    print(event)
-    print(event['Records'])
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(event)
+    pp.pprint(event['Records'])
     record = event['Records'][0]
     body = json.loads(record['body'])
-    print(body)
-    print(body['consignment-reference'])
-
+    pp.pprint(body)
+    message = json.loads(body['Message'])
+    pp.pprint(message)
+    print(message['consignment-reference'])
     prefix = ""
-    if 'consignment-reference' in body:
-        prefix = body['consignment-reference']
+    if 'consignment-reference' in message:
+        prefix = message['consignment-reference']
     else:
         prefix = "X"
 
     retry = ""
-    if 'number-of-retries' in body:
-        retry = str(body['number-of-retries'])
+    if 'number-of-retries' in message:
+        retry = str(message['number-of-retries'])
     else:
         retry = "X"
 
