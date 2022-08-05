@@ -19,7 +19,7 @@ fi
 . "${build_sub_dir}/version.sh"
 
 # shellcheck disable=SC2154  # var imported elsewhere
-printf 'lib_build_list: %s\n' "${lib_build_list:?}"
+printf 'lib_build_list: %s\n' "${lib_build_list}"
 
 # Create temporary requirements.txt and add built whl file names
 build_requirements="${build_sub_dir}/requirements.txt"
