@@ -1,11 +1,10 @@
 FROM public.ecr.aws/lambda/python:3.8
-ARG s3_lib_whl
 
 # Copy function code
 COPY tre_editorial_integration.py ${LAMBDA_TASK_ROOT}
 
 # Install the function's dependencies using file requirements.txt
-COPY "${s3_lib_whl}" .
+COPY "*.whl" .
 COPY tmp-build-requirements.txt ./requirements.txt
 RUN yum -y update \
     && yum clean all \
