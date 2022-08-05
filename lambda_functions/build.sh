@@ -26,6 +26,9 @@ if [ -f "${build_requirements}" ]; then
         "${tmp_build_requirements}" "${build_requirements}" 1>&2
     cp "${build_requirements}" "${tmp_build_requirements}"
 
+    # Ensure there's a newline before appending .whl file list
+    printf '\n' >> "${tmp_build_requirements}"
+
     # Build any required Python libraries (using lib_build_list in version.sh)
     # shellcheck disable=SC2154  # var imported elsewhere
     for lib_name in "${lib_build_list[@]}"; do
