@@ -18,6 +18,9 @@ fi
 # shellcheck source=/dev/null
 . "${build_sub_dir}/version.sh"
 
+# shellcheck disable=SC2154  # var imported elsewhere
+printf 'lib_build_list: %s\n' "${lib_build_list:?}"
+
 # Create temporary requirements.txt and add built whl file names
 build_requirements="${build_sub_dir}/requirements.txt"
 if [ -f "${build_requirements}" ]; then
@@ -30,7 +33,6 @@ if [ -f "${build_requirements}" ]; then
     printf '\n' >> "${tmp_build_requirements}"
 
     # Build any required Python libraries (using lib_build_list in version.sh)
-    # shellcheck disable=SC2154  # var imported elsewhere
     for lib_name in "${lib_build_list[@]}"; do
         printf 'Building required lib: "%s"\n' "${lib_name}"
         (cd "../${lib_name}" && ./build.sh)
