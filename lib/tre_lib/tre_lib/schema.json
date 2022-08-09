@@ -1,0 +1,101 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "string"
+        },
+        "timestamp": {
+            "type": "integer"
+        },
+        "UUIDs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "patternProperties": {
+                    "^[a-zA-Z0-9_-]+-UUID$": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "additionalProperties": false
+        },
+        "producer": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "process": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "enum": [
+                        "Judgment",
+                        "Standard",
+                        null
+                    ]
+                },
+                "environment": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "process",
+                "type",
+                "environment"
+            ],
+            "additionalProperties": false
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "TDR": {
+                    "type": "object"
+                },
+                "TRE": {
+                    "type": "object"
+                },
+                "Access": {
+                    "type": "object"
+                }
+            },
+            "anyOf": [
+                {
+                    "required": []
+                },
+                {
+                    "required": [
+                        "TDR"
+                    ]
+                },
+                {
+                    "required": [
+                        "TRE"
+                    ]
+                },
+                {
+                    "required": [
+                        "Access"
+                    ]
+                }
+            ],
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "version",
+        "timestamp",
+        "UUIDs",
+        "parameters"
+    ],
+    "additionalProperties": false
+}

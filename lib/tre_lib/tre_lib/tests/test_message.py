@@ -30,6 +30,8 @@ def setup_logging(
 class TestMessage(unittest.TestCase):
     MSG_NOT_EXPECTED_ERR = 'Did not get expected error message'
     PRODUCER = 'TRE'
+    TYPE_JUDGMENT='Judgment'
+    TYPE_STANDARD='Standard'
 
     def test_minimal_ok(self):
         PROCESS = 'test_str_output process'
@@ -119,8 +121,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process=None,
                 type='t',
-                environment='e',
-                parameters='d')
+                environment='e')
             self.fail('No ValueError with missing process argument')
         except ValueError as e:
             self.assertTrue(
@@ -133,41 +134,25 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='',
                 type='t',
-                environment='e',
-                parameters='d')
+                environment='e')
             self.fail('No ValueError with empty process argument')
         except ValueError as e:
             self.assertTrue(
                 str(e) == 'Empty "process" argument',
                 self.MSG_NOT_EXPECTED_ERR)
 
-    def test_type_none(self):
-        try:
-            Message(
-                producer=self.PRODUCER,
-                process='p',
-                type=None,
-                environment='e',
-                parameters='d')
-            self.fail('No ValueError with missing type argument')
-        except ValueError as e:
-            self.assertTrue(
-                str(e) == 'Empty "type" argument',
-                self.MSG_NOT_EXPECTED_ERR)
+    def test_no_type_is_allowed(self):
+        Message(
+            producer=self.PRODUCER,
+            process='p',
+            type=None,
+            environment='e')
 
-    def test_type_empty(self):
-        try:
-            Message(
-                producer=self.PRODUCER,
-                process='p',
-                type='',
-                environment='e',
-                parameters='d')
-            self.fail('No ValueError with empty type argument')
-        except ValueError as e:
-            self.assertTrue(
-                str(e) == 'Empty "type" argument',
-                self.MSG_NOT_EXPECTED_ERR)
+        Message(
+            producer=self.PRODUCER,
+            process='p',
+            type='',
+            environment='e')
 
     def test_environment_none(self):
         try:
@@ -175,8 +160,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='p',
                 type='t',
-                environment=None,
-                parameters='d')
+                environment=None)
             self.fail('No ValueError with missing environment argument')
         except ValueError as e:
             self.assertTrue(
@@ -189,8 +173,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='p',
                 type='t',
-                environment='',
-                parameters='d')
+                environment='')
             self.fail('No ValueError with empty environment argument')
         except ValueError as e:
             self.assertTrue(
@@ -203,7 +186,7 @@ class TestMessage(unittest.TestCase):
         PROCESS_PREFIX = 'uk.gov.nationalarchives.test.producer'
         PROCESS_1 = f'{PROCESS_PREFIX}1'
         PROCESS_2 = f'{PROCESS_PREFIX}2'
-        TYPE = 'judgment'
+        TYPE = self.TYPE_JUDGMENT
         ENVIRONMENT = 'unit-test'
 
         m1 = Message(
@@ -234,4 +217,4 @@ class TestMessage(unittest.TestCase):
                         'm2 UUIDs list len is not 2')
 
 
-setup_logging(default_level=logging.WARNING)
+setup_logging(default_level=logging.INFO)

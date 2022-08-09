@@ -5,13 +5,11 @@ set -e
 printf 'Removing local build files\n'
 rm -rf build/
 rm -rf dist/
-rm -rf __pycache__/
-rm -rf s3_lib/__pycache__/
-rm -rf s3_lib/s3_lib.egg-info/
+rm -rf tre_lib.egg-info/
 
 # Check tests pass
 printf 'Running Python tests\n'
-(cd tre_lib && python3 -m unittest)
+(cd tre_lib && python3 -m unittest discover ./tests -p 'test_*.py')
 
 # Build package .whl file in ./dist/
 . version.sh

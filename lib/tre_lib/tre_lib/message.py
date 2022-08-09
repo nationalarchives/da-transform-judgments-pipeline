@@ -7,6 +7,8 @@ import uuid
 import json
 import os
 import time
+import pkgutil
+from jsonschema import validate
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +44,20 @@ class Message():
     KEY_ENVIRONMENT = 'environment'
     KEY_PARAMETERS = 'parameters'
 
-    def validate(
+    @staticmethod
+    def get_schema(schema_name: str = 'schema.json'):
+        return json.loads(
+            pkgutil.get_data(
+                package=__name__,
+                resource=schema_name
+            ).decode()
+        )
+
+    def validate_input(
         self,
+        environment: str,
         producer: str,
         process: str,
-        type: str,
-        environment: str,
         parameters: dict = None,
         prior_message: dict = None
     ):
@@ -55,49 +65,52 @@ class Message():
         Raise error if input parameters are invalid.
         """
         logger.info('validate')
-        if producer is None or len(producer) == 0:
-            raise ValueError('Empty "producer" argument')
-        elif process is None or len(process) == 0:
-            raise ValueError('Empty "process" argument')
-        elif type is None or len(type) == 0:
-            raise ValueError('Empty "type" argument')
-        elif environment is None or len(environment) == 0:
+        logger.info(f'prior_message={prior_message}')
+        if not environment:
             raise ValueError('Empty "environment" argument')
-        elif parameters is not None and not isinstance(parameters, dict):
+        elif not producer:
+            raise ValueError('Empty "producer" argument')
+        elif not process:
+            raise ValueError('Empty "process" argument')
+        elif parameters and not isinstance(parameters, dict):
             raise ValueError(f'parameters is not dict type')
         elif prior_message is not None:
-            if not isinstance(prior_message, dict):
-                raise ValueError(f'prior_message is not dict type')
-            elif self.KEY_UUIDS not in prior_message:
-                raise ValueError(f'No key "{self.KEY_UUIDS}" in prior_message')
-            elif not isinstance(prior_message[self.KEY_UUIDS], list):
-                raise ValueError(
-                    f'Key "{self.KEY_UUIDS}" in prior_message is not list type')
+            validate(instance=prior_message,
+                     schema=Message.get_schema())
 
     def __init__(
             self,
+            environment: str,
             producer: str,
             process: str,
-            type: str,
-            environment: str,
             parameters: dict = None,
+            type: str = None,
             prior_message: dict = None,
             timestamp_ns_utc: int = None
     ):
         """
         Validate input, initialise new message object.
 
-        Arguments:
-        producer: The system name for the message; e.g. "TRE", "TDR", etc
-        process: The name of the process that will send the message
-        type: The type of the consignment; e.g. "judgment", "standard"
-        environment: The execution environment; e.g. "dev", "test", "int", etc
-        parameters: The (dict) content for this message's parameters section
-        prior_message: An (optional) input message dict with UUID history
+        environment: str
+            The execution environment; e.g. "dev", "test", "int", etc
+        producer: str
+            The system name for the message; e.g. "TRE", "TDR", etc
+        process: str
+            The name of the process that will send the message
+        parameters: dict
+            The content for this message's parameters section
+        type: str
+            Optional consignment type (e.g. "judgment", "standard"); overrides
+            default value from prior_message (if present)
+        prior_message: dict
+            Optional input message dict (with UUID history parameter, type
+            parameter, etc)
+        timestamp_ns_utc: int
+            Optional alternate timestamp value (nanoseconds UTC)
         """
         logger.info('__init__')
-        self.validate(
-            producer=producer, process=process, type=type,
+        self.validate_input(
+            producer=producer, process=process,
             environment=environment, parameters=parameters,
             prior_message=prior_message)
 
@@ -118,13 +131,23 @@ class Message():
         else:
             # Use [:] to copy (not reference) prior UUIDs
             self.new_message[self.KEY_UUIDS] = prior_message[self.KEY_UUIDS][:]
+            self.new_message[self.KEY_UUIDS] = prior_message[self.KEY_UUIDS][:]
 
         self.new_message[self.KEY_UUIDS].append({self.uuid_key: self.uuid})
+
         self.new_message[self.KEY_PRODUCER] = {}
+        self.new_message[self.KEY_PRODUCER][self.KEY_ENVIRONMENT] = environment
         self.new_message[self.KEY_PRODUCER][self.KEY_NAME] = producer
         self.new_message[self.KEY_PRODUCER][self.KEY_PROCESS] = process
-        self.new_message[self.KEY_PRODUCER][self.KEY_TYPE] = type
-        self.new_message[self.KEY_PRODUCER][self.KEY_ENVIRONMENT] = environment
+
+        # Default to type of prior_message, but type parameter overrides it
+        if type:
+            self.new_message[self.KEY_PRODUCER][self.KEY_TYPE] = type
+        elif prior_message and (self.KEY_TYPE in prior_message):
+            prior_type = prior_message[self.KEY_TYPE]
+            self.new_message[self.KEY_PRODUCER][self.KEY_TYPE] = prior_type
+        else:
+            self.new_message[self.KEY_PRODUCER][self.KEY_TYPE] = None
 
         if parameters is None:
             self.new_message[self.KEY_PARAMETERS] = {}
@@ -132,11 +155,11 @@ class Message():
             self.new_message[self.KEY_PARAMETERS] = parameters
 
     def to_json_str(self, indent=None) -> str:
-        return json.dumps(self.new_message)
+        return json.dumps(self.new_message, indent=indent)
 
     def to_dict(self) -> dict:
         return self.new_message
 
 
 if __name__ == "__main__":
-    setup_logging()
+    setup_logging(default_level=logging.INFO)

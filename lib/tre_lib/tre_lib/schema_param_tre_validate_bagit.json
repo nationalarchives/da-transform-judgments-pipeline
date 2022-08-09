@@ -1,0 +1,63 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "TRE": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "s3-bucket": {
+                    "type": "string"
+                },
+                "s3-object-root": {
+                    "type": "string"
+                },
+                "s3-bagit-name": {
+                    "type": "string"
+                },
+                "validated-files": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        },
+                        "root": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "data": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": ["path", "root", "data"]
+                },
+                "number-of-retries": {
+                    "type": "integer"
+                },
+                "reference": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "number-of-retries",
+                "reference"
+            ]
+        }
+    },
+    "required": [
+        "TRE"
+    ],
+    "additionalProperties": false
+}

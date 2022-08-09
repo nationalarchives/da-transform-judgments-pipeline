@@ -7,6 +7,8 @@ setuptools.setup(
     name='tre_lib',
     version=tre_lib_version,
     description='TRE Python code library',
-    packages=setuptools.find_packages(exclude=['tests']),
+    packages={'tre_lib'},
+    package_dir={'tre_lib': 'tre_lib'},
+    package_data={'tre_lib': ['schema*.json']},
     python_requires='>=3.8'
 )
