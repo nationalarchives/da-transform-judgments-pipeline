@@ -1,6 +1,6 @@
 # Testing
 
-To run tests for `tre-validate-bag`:
+To run tests for `tre-validate-bagit`:
 
 1. Optionally enable a Python virtual environment; e.g. if one is configured
     in the project's root directory use:
