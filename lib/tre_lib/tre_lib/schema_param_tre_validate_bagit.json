@@ -8,7 +8,14 @@
                 "errors": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": ["error"]
                     }
                 },
                 "s3-bucket": {
@@ -51,6 +58,7 @@
             },
             "additionalProperties": false,
             "required": [
+                "errors",
                 "number-of-retries",
                 "reference"
             ]

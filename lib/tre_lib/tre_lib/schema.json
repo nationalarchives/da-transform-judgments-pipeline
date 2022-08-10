@@ -38,8 +38,8 @@
                         "null"
                     ],
                     "enum": [
-                        "Judgment",
-                        "Standard",
+                        "judgment",
+                        "standard",
                         null
                     ]
                 },
