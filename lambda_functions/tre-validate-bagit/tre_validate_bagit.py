@@ -126,7 +126,7 @@ def handler(event, context):
         producer=env_producer,
         process=env_process,
         environment=env_environment,
-        type='Judgment',
+        type=consignment_type,
         prior_message=event,
         parameters=output_parameter_block)
 
