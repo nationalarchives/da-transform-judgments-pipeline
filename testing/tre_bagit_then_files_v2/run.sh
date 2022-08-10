@@ -41,7 +41,7 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
 
   local tdr_parameters
   tdr_parameters="$(
-    ../../../testing/v2_message_parameters_tdr.sh \
+    ../v2_message_parameters_tdr.sh \
         "${consignment_reference}" \
         "${bagit_url}" \
         "${bagit_checksum_url}" \
@@ -55,7 +55,7 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
   local uuid_list='[{"TDR-UUID": "'"${tdr_uuid}"'"}]'
   
   event="$( \
-    ../../../testing/v2_message_create.sh \
+    ../v2_message_create.sh \
       "${uuid_list}" \
       'TDR' \
       'consignment-export' \
@@ -67,7 +67,7 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
 
   # export PYTHONPATH=../../tre-validate-bagit:../../s3_lib
-  export PYTHONPATH=../../tre-validate-bagit:../../tre-validate-bagit-files
+  export PYTHONPATH=../../lambda_functions/tre-validate-bagit:../../lambda_functions/tre-validate-bagit-files
   export TRE_ENVIRONMENT='localhost'
   export TRE_S3_BUCKET="${s3_bucket_target}"
   export TRE_SYSTEM_NAME='TRE'
