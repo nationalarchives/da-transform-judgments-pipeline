@@ -1,0 +1,46 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "TDR": {
+            "type": "object",
+            "properties": {
+                "resource": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "string",
+                            "format": "uri"
+                        }
+                    }
+                },
+                "resource-validation": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "string",
+                            "format": "uri"
+                        }
+                    }
+                },
+                "number-of-retries": {
+                    "type": "integer"
+                },
+                "reference": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "resource",
+                "resource-validation",
+                "number-of-retries",
+                "reference"
+            ]
+        }
+    },
+    "required": [
+        "TDR"
+    ],
+    "additionalProperties": false
+}

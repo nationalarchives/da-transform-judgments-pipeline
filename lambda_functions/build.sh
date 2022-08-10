@@ -39,7 +39,7 @@ if [ -f "${build_requirements}" ]; then
         lib_whl_path="$(find "../${lib_name}/dist" -name "*.whl")"
         lib_whl="$(basename "${lib_whl_path}")"
         printf 'lib_whl_path=%s lib_whl=%s\n' "${lib_whl_path}" "${lib_whl}"
-        printf 'Copying "%s" tot "%s"\n' "${lib_whl_path}" "${build_sub_dir}"
+        printf 'Copying "%s" to "%s"\n' "${lib_whl_path}" "${build_sub_dir}"
         cp "${lib_whl_path:?}" "${build_sub_dir}"
         printf '%s\n' "${lib_whl}" >> "${tmp_build_requirements}"
     done
