@@ -4,7 +4,7 @@ FROM public.ecr.aws/lambda/python:3.8
 COPY tre_validate_bagit.py ${LAMBDA_TASK_ROOT}
 
 # Install the function's dependencies using file requirements.txt
-COPY "*.whl" .
+COPY "*.whl" ./
 COPY tmp-build-requirements.txt ./requirements.txt
 RUN  pip3 install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
