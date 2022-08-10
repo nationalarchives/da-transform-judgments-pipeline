@@ -24,9 +24,9 @@ To run tests for `tre-validate-bag`:
     (cd .. && pip3 install --requirement tmp-build-requirements.txt)
     ```
     > The Docker build script (`../../build.sh`) is used here to update the
-        tmp-build-requirements.txt file (we don't need Docker image it
-        builds); for this example, any script error (e.g. from not deploying
-        to ECR) is ignored (hence use of `;` instead of `&&`).
+        tmp-build-requirements.txt file (we don't need the Docker image it
+        builds here). For this example, any script error (e.g. not deploying
+        to ECR) is ignored (hence `;` not `&&` before last command group).
 
 4. Ensure a Bagit `.tar.gz` file and a corresponding `.tar.gz.sha256` file
     has been copied to an arbitrary s3 bucket (`"${s3_bucket_in}"`)
