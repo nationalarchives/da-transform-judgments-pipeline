@@ -30,8 +30,8 @@ def setup_logging(
 class TestMessage(unittest.TestCase):
     MSG_NOT_EXPECTED_ERR = 'Did not get expected error message'
     PRODUCER = 'TRE'
-    TYPE_JUDGMENT='Judgment'
-    TYPE_STANDARD='Standard'
+    TYPE_JUDGMENT='judgment'
+    TYPE_STANDARD='standard'
 
     def test_minimal_ok(self):
         PROCESS = 'test_str_output process'
