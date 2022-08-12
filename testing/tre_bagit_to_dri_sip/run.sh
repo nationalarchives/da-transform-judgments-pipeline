@@ -27,6 +27,28 @@ main() {
 
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
   python3 test-bagit-to-dri-sip.py "${event}"
+  aws s3api get-object --bucket dev-tre-temp  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz MOCKA101Y22TBNQ3_actual.tar.gz
+  aws s3api get-object --bucket dev-tre-temp  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz.sha256 MOCKA101Y22TBNQ3_actual.tar.gz.sha256
+  mkdir -p /tmp/tre-test/actual
+  tar -xf MOCKA101Y22TBNQ3_actual.tar.gz -C /tmp/tre-test/actual
+  mkdir -p /tmp/tre-test/expected
+  tar -xf MOCKA101Y22TBNQ3_expected2.tar.gz -C /tmp/tre-test/expected
+  diff -q -s -r /tmp/tre-test/actual /tmp/tre-test/expected
+
+
+  DIFF=$(diff -r /tmp/tre-test/actual /tmp/tre-test/expected)
+  if [ "$DIFF" != "" ]
+  then
+      echo "====> NOT THE SAME ==> FAIL"
+  else
+      echo "  ====> SAME YAY  <====  "
+  fi
+
+  # clean up
+  rm -rf /tmp/tre-test/*
+  rm MOCKA101Y22TBNQ3_actual.tar.gz
+  rm MOCKA101Y22TBNQ3_actual.tar.gz.sha256
+  aws s3 rm s3://dev-tre-temp/consignments/standard/TDR-2022-NQ3/0/sip --recursive
 }
 
 main "$@"

@@ -4,6 +4,7 @@ import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/referenc
 import tarfile  # https://docs.python.org/3/library/tarfile.html
 import io
 import os
+import collections
 from s3_lib import common_lib
 
 # Set global logging options; AWS environment may override this though
@@ -121,3 +122,83 @@ def s3_objects_to_s3_tar_gz_file(
 
     logger.info('s3_objects_to_s3_tar_gz_file: return')
     return tar_items
+
+
+def s3_objects_to_s3_tar_gz_file_with_prefix_substitution(
+        s3_bucket_in,
+        s3_objects_with_prefix_subs,
+        tar_gz_object,
+        s3_bucket_out=None):
+    """
+    Write `s3_objects_with_prefix_subs`  (s3 objects + a prefix to remove and a prefix to add)
+    from bucket `s3_bucket_in` to `tar_gz_object` in `s3_bucket_out`,
+    or `s3_bucket_in` if `s3_bucket_out` is not specified.
+    """
+
+    # Track the tar.gz archive's objects
+    tar_items = []
+
+    # Initialise for tar.gz
+    tar_stream = io.BytesIO()
+    tar = tarfile.open(mode='w:gz', fileobj=tar_stream)
+
+    # Get each s3 object, write it to tar.gz with required name and size info
+    s3_client = boto3.client('s3')
+
+    try:
+        iterable_s3_objects_with_prefix_subs = get_iterable(s3_objects_with_prefix_subs)
+        for s3_objects_to_zip in iterable_s3_objects_with_prefix_subs:
+            tar_drop_prefix = '' if s3_objects_to_zip.prefix_to_remove is None else s3_objects_to_zip.prefix_to_remove
+            tar_add_prefix = '' if s3_objects_to_zip.prefix_to_add is None else s3_objects_to_zip.prefix_to_add
+            logger.info(
+                f's3_objects_to_s3_tar_gz_file: start: s3_bucket_in={s3_bucket_in} '
+                f's3_object_names={s3_objects_to_zip} tar_gz_object={tar_gz_object} '
+                f's3_bucket_out={s3_bucket_out} tar_drop_prefix-{tar_drop_prefix} tar_add_prefix={tar_add_prefix}')
+            for s3_object in s3_objects_to_zip.objects:
+                object_name_without_prefix = s3_object.replace(tar_drop_prefix, "", 1)
+                object_name = f'{tar_add_prefix}{object_name_without_prefix}'
+                logger.info(f's3_object_name={s3_object} object_name={object_name}')
+                try:
+                    s3_object = s3_client.get_object(Bucket=s3_bucket_in, Key=s3_object)
+                except s3_client.exceptions.NoSuchKey as e:
+                    logger.error(str(e))
+                    raise common_lib.S3LibError(
+                        f'Unable to find key "{s3_object}" in '
+                        f'bucket "{s3_bucket_in}". {str(e)}')
+                # Determine file name inside tar, and its size
+                tar_info = tarfile.TarInfo(object_name)
+                tar_info.size = s3_object['ContentLength']
+                tar.addfile(tar_info, io.BytesIO(s3_object['Body'].read()))
+                tar_items.append({'name': object_name, 'size': tar_info.size})
+    finally:
+        logger.info('tar.close()')
+        tar.close()
+
+    # Write the tar object to s3
+    s3_bucket_out = s3_bucket_in if s3_bucket_out is None else s3_bucket_out
+    logger.info(
+        f's3_client.put_object s3_bucket_out={s3_bucket_out} '
+        f'tar_gz_object={tar_gz_object}')
+
+    s3_client.put_object(
+        Body=tar_stream.getvalue(),
+        Bucket=s3_bucket_out,
+        Key=tar_gz_object)
+
+    logger.info('s3_objects_to_s3_tar_gz_file: return')
+    return tar_items
+
+
+class S3objectsToZip:
+
+    def __init__(self, objects, prefix_to_remove='', prefix_to_add=''):
+        self.objects = objects
+        self.prefix_to_remove = prefix_to_remove
+        self.prefix_to_add = prefix_to_add
+
+
+def get_iterable(x):
+    if isinstance(x, collections.Iterable):
+        return x
+    else:
+        return (x,)
