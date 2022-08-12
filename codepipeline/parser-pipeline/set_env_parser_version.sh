@@ -29,11 +29,17 @@ main() {
 
   # Get current version
   printf 'Extracting parser version ...\n'
+  
+  local python_get_version="import sys
+import json
+print(
+    json.load(sys.stdin)['image_versions']['tre_run_judgment_parser']
+)"
+  
   local current_parser_version
   current_parser_version="$(
     printf '%s' "${aws_parameter_store_value}" \
-      | grep '^    tre_run_judgment_parser = "' \
-      | cut -d '"' -f 2
+      | python3 -c "${python_get_version}"
   )"
 
   printf 'current_parser_version=%s\n' "${current_parser_version}"
@@ -51,20 +57,20 @@ main() {
     return 1
   fi
 
-  # Use sed to replace only tre_run_judgment_parser version
-  local str_find='tre_run_judgment_parser = "'
+    local python_set_version="import sys
+import json
+tfvar_record = json.load(sys.stdin)
+new_version = sys.argv[1]
+if len([int(i) for i in new_version.lstrip('v').split('.')]) != 3:
+    raise ValueError(f'Version \"{new_version}\" is not valid') 
+tfvar_record['image_versions']['tre_run_judgment_parser'] = new_version
+print(json.dumps(tfvar_record, indent=2))"
+
+  local new_value
   new_value="$(
     printf '%s' "${aws_parameter_store_value}" | \
-    sed -e "s/\(${str_find}\)[^\"]*/\1${new_parser_version}/"
+    python3 -c "${python_set_version}" "${new_parser_version}"
   )"
-  #         s/                                                : search
-  #           \(                                              : start group 1
-  #                        \)                                 : end group 1
-  #                          [^\"]*                           : match until "
-  #                                /                          : replacement
-  #                                 \1                        : group 1
-  #                                                        /  : end
-  # https://stackoverflow.com/a/49847921
 
   printf '\nnew_value\n---------\n%s\n\n' "${new_value}"
   printf 'Updating parameter %s ...\n' "${parameter_name}"

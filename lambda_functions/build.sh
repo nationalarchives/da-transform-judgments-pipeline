@@ -14,35 +14,54 @@ if [ ! -d "${build_sub_dir}" ]; then
     exit 1
 fi
 
-# Build s3_lib package (use () to temporarily change to the package's dir)
-(cd ../s3_lib && ./build.sh)
-
-# Copy latest s3_lib build to build directory so Dockerfile can access it
-s3_lib_whl_path="$(find ../s3_lib/dist/s3_lib*)"
-s3_lib_whl="$(basename "${s3_lib_whl_path}")"
-cp "${s3_lib_whl_path}" "${build_sub_dir}"
-
-# Create temporary requirements.txt and add build whl file's name
-build_requirements="${build_sub_dir}/requirements.txt"
-if [ -f "${build_requirements}" ]; then
-    tmp_build_requirements="${build_sub_dir}/tmp-build-requirements.txt"
-    cp "${build_requirements}" "${tmp_build_requirements}"
-    printf '\n%s\n' "${s3_lib_whl}" >> "${tmp_build_requirements}"
-    printf 'Requirements file "%s" copied to "%s" and updated\n' \
-        "${build_requirements}" "${tmp_build_requirements}" 1>&2
-else
-    printf 'Requirements file "%s" not found\n' "${build_requirements}" 1>&2
-fi
-
 # Source Docker build environment variables
 # shellcheck source=/dev/null
 . "${build_sub_dir}/version.sh"
 
-# Ignore errors from the following commands (by adding || true)
+# shellcheck disable=SC2154  # var imported elsewhere
+printf 'lib_build_list: %s\n' "${lib_build_list}"
+
+# Create temporary requirements.txt and add built whl file names
+build_requirements="${build_sub_dir}/requirements.txt"
+if [ -f "${build_requirements}" ]; then
+    tmp_build_requirements="${build_sub_dir}/tmp-build-requirements.txt"
+    printf 'Creating new "%s" file from "%s"\n' \
+        "${tmp_build_requirements}" "${build_requirements}" 1>&2
+    cp "${build_requirements}" "${tmp_build_requirements}"
+
+    # Ensure there's a newline before appending .whl file list
+    printf '\n' >> "${tmp_build_requirements}"
+
+    # Build any required Python libraries (using lib_build_list in version.sh)
+    for lib_name in "${lib_build_list[@]}"; do
+        printf 'Building required lib: "%s"\n' "${lib_name}"
+        (cd "../${lib_name}" && ./build.sh)
+        lib_whl_path="$(find "../${lib_name}/dist" -name "*.whl")"
+        lib_whl="$(basename "${lib_whl_path}")"
+        printf 'lib_whl_path=%s lib_whl=%s\n' "${lib_whl_path}" "${lib_whl}"
+        printf 'Copying "%s" to "%s"\n' "${lib_whl_path}" "${build_sub_dir}"
+        cp "${lib_whl_path:?}" "${build_sub_dir}"
+        printf '%s\n' "${lib_whl}" >> "${tmp_build_requirements}"
+    done
+
+    printf 'Running: ls -l "%s"\n' "${build_sub_dir}"
+    ls -l "${build_sub_dir}"
+    printf 'Running: cat "%s"\n' "${tmp_build_requirements}"
+    cat "${tmp_build_requirements}"
+else
+    printf 'Requirements file "%s" not found\n' "${build_requirements}" 1>&2
+fi
+
+printf 'Running docker rmi for image "%s"\n' "${docker_image:?}"
 docker rmi "${docker_image:?}" || true
-docker build --build-arg s3_lib_whl="${s3_lib_whl}" --tag "${docker_image}" "${build_sub_dir}"
-rm "${build_sub_dir}/${s3_lib_whl}" || true
-rm "${tmp_build_requirements}" || true
+
+printf 'Running docker build for directory "%s with tag "%s"\n' \
+    "${build_sub_dir}" "${docker_image:?}"
+
+docker build \
+    --tag "${docker_image:?}" \
+    "${build_sub_dir}"
+
 docker images
 
 # Exit with error at this point if AWS_REGION not passed to abort ECR updates
