@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "timestamp": 1660299342907731000,
+  "UUIDs": [
+    {
+      "TDR-UUID": "d8c3adc4-8815-410d-8b22-059f1bcdd5e4"
+    }
+  ],
+  "producer": {
+    "environment": "dev",
+    "name": "TDR",
+    "process": "consignment-export test payload",
+    "type": "judgment"
+  },
+  "parameters": {
+    "TDR": {
+      "resource": {
+        "resource-type": "Object",
+        "access-type": "url",
+        "value": "https://example.s3.amazonaws.com/consignments/judgment/TDR-2021-CF6L.tar.gz?X..."
+      },
+      "resource-validation": {
+        "resource-type": "Object",
+        "access-type": "url",
+        "validation-method": "SHA256",
+        "value": "https://example.s3.amazonaws.com/consignments/judgment/TDR-2021-CF6L.tar.gz.sha256?X..."
+      },
+      "number-of-retries": 0,
+      "reference": "TDR-2021-CF6L"
+    }
+  }
+}
