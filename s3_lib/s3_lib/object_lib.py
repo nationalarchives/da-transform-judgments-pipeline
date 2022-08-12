@@ -272,14 +272,3 @@ def get_object(bucket, key):
         raise common_lib.S3LibError(
                 f'Unable to find key "{key}" in '
                 f'bucket "{bucket}". {str(e)}')
-
-
-def copy_object(from_bucket, from_key, to_bucket, to_key):
-    """
-    Copy S3 object `from_key` in `from_bucket` to S3 object `to_key` in `to_bucket`
-    """
-    logger.info(f'copy_object from_bucket={from_bucket} from_key={from_key} to_bucket={to_bucket} to_key={to_key}')
-    s3 = boto3.resource('s3')
-    from_bucket_and_key = from_bucket + '/' + from_key
-    s3.Object(to_bucket, to_key).copy_from(CopySource=from_bucket_and_key)
-
