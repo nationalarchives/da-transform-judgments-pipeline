@@ -81,7 +81,7 @@ def handler(event, context):
     logger.info(f'event_record:\n{event_record}')
     event_record_body = json.loads(event_record['body'])
     logger.info(f'event_record_body:\n{event_record_body}')
-    tre_message = event_record_body['Message']
+    tre_message = json.loads(event_record_body['Message'])
     logger.info(f'tre_message:\n{tre_message}')
 
     # Get consignment reference for the execution name
