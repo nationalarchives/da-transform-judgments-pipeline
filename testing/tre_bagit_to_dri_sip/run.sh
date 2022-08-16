@@ -12,6 +12,9 @@ main() {
   consignment_type="$3"
   number_of_retries="$4"
 
+  #tmp clean up
+  aws s3 rm s3://dev-tre-temp/consignments/standard/TDR-2022-NQ3/0/sip --recursive
+
   export PYTHONPATH=../../lambda_functions/tre-bagit-to-dri-sip:../../s3_lib
   export S3_TEMPORARY_BUCKET="${s3_bucket}"
 

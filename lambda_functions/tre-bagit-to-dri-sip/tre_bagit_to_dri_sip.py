@@ -28,6 +28,7 @@ KEY_ERROR_MESSAGE='error-message'
 KEY_S3_BUCKET='s3-bucket'
 KEY_OUTPUT_MESSAGE='output-message'
 
+
 def handler(event, context):
     """
     Given a bagit unzip sitting in the temp-bucket determined by env var and with location built from the event's
@@ -80,7 +81,6 @@ def handler(event, context):
         object_lib.string_to_s3_object(f'{closure_checksum}  {dc["CLOSURE"]}\n',
                                        env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_CHECKSUM_IN_SIP"])
         # write schemas
-        # TODO: these text files are just alongside the test-bagit-to-dri-sip.py, need to including in build / docker
         with open('metadata-schema.txt') as file:
             object_lib.string_to_s3_object(file.read(), env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_SCHEMA_IN_SIP"])
         with open('closure-schema.txt') as file:
@@ -112,19 +112,19 @@ def handler(event, context):
 
 
 def dri_config_dict(consignment_reference, consignment_series):
-    metadata = "metadata.csv"
-    closure = "closure.csv"
+    metadata = 'metadata.csv'
+    closure = 'closure.csv'
     consignment_reference_part = consignment_reference.split("-")
     tdr_year = consignment_reference_part[1]
     tdr_batch_number = consignment_reference_part[2]
-    batch = consignment_series.replace(" ", "") + "Y" + tdr_year[2:] + "TB" + tdr_batch_number
-    series = consignment_series.replace(" ", "_")
-    internal_prefix = batch + "/" + series + "/"
+    batch = consignment_series.replace(' ', '') + 'Y' + tdr_year[2:] + 'TB' + tdr_batch_number
+    series = consignment_series.replace(' ', '_')
+    internal_prefix = batch + '/' + series + '/'
     return dict(
         BATCH=batch,
         SERIES=series,
         INTERNAL_PREFIX=internal_prefix,
-        IDENTIFIER_PREFIX="file:/" + internal_prefix,
+        IDENTIFIER_PREFIX='file:/' + internal_prefix,
         METADATA=metadata,
         CLOSURE=closure,
         METADATA_IN_SIP=internal_prefix + metadata,
@@ -139,16 +139,16 @@ def dri_config_dict(consignment_reference, consignment_series):
 def bagit_config_dict(consignment_reference):
     return dict(
         CONSIGNMENT_REFERENCE=consignment_reference,
-        PREFIX_FOR_DATA=consignment_reference + "/data/",
-        BAG_INFO_TEXT=consignment_reference + "/bag-info.txt",
-        BAGIT_MANIFEST=consignment_reference + "/manifest-sha256.txt",
-        BAGIT_METADATA=consignment_reference + "/file-metadata.csv"
+        PREFIX_FOR_DATA=consignment_reference + '/data/',
+        BAG_INFO_TEXT=consignment_reference + '/bag-info.txt',
+        BAGIT_MANIFEST=consignment_reference + '/manifest-sha256.txt',
+        BAGIT_METADATA=consignment_reference + '/file-metadata.csv'
     )
 
 
 def s3_config_dict(consignment_type, consignment_reference, retry_count):
-    sip_directory = "sip/"
-    prefix_to_bagit = 'consignments/' + consignment_type + '/' + consignment_reference + "/" + str(retry_count) + '/'
+    sip_directory = 'sip/'
+    prefix_to_bagit = 'consignments/' + consignment_type + '/' + consignment_reference + '/' + str(retry_count) + '/'
     return dict(
         PREFIX_TO_BAGIT=prefix_to_bagit,
         PREFIX_TO_SIP=prefix_to_bagit + sip_directory
@@ -214,9 +214,9 @@ class BagitData:
     @staticmethod
     def dri_identifier(row, dc):
         # set dri batch/series/ prefix, escape the uri + append a `/` if folder
-        dri_identifier = row.get('Filepath').replace("data/", dc["IDENTIFIER_PREFIX"], 1)
+        dri_identifier = row.get('Filepath').replace('data/', dc["IDENTIFIER_PREFIX"], 1)
         final_slash_if_folder = "/" if(BagitData.dri_folder(row) == 'folder') else ""
-        return urllib.parse.quote(dri_identifier).replace("%3A", ":") + final_slash_if_folder
+        return urllib.parse.quote(dri_identifier).replace('%3A', ':') + final_slash_if_folder
 
     @staticmethod
     def dri_legal_status(row):
@@ -234,8 +234,8 @@ class BagitData:
         return bagit_manifest_for_row[0].get('checksum') if(len(bagit_manifest_for_row) == 1) else ''
 
     def dri_last_modified(self, row):
-        if self.dri_folder(row) == "file":
+        if self.dri_folder(row) == 'file':
             return row.get('LastModified')
         else:
             # use bagit export time for folders as they have no dlm from tdr
-            return self.tdr_bagit_export_time.replace("Z", "", 1)
+            return self.tdr_bagit_export_time.replace('Z', '', 1)
