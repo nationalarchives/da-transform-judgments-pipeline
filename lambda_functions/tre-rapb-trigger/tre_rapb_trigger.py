@@ -79,7 +79,9 @@ def handler(event, context):
     # Extract TRE message
     event_record = event[KEY_RECORDS][0]
     logger.info(f'event_record:\n{event_record}')
-    tre_message = json.loads(event_record['body'])
+    event_record_body = json.loads(event_record['body'])
+    logger.info(f'event_record_body:\n{event_record_body}')
+    tre_message = event_record_body['Message']
     logger.info(f'tre_message:\n{tre_message}')
 
     # Get consignment reference for the execution name

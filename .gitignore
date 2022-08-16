@@ -10,3 +10,4 @@ tmp-build-requirements.txt
 /.idea/
 /testing/tre_module_test/test_outputs/
 /testing/tre_module_test/config/
+*.iml
