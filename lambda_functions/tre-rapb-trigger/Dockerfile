@@ -6,4 +6,4 @@ RUN yum -y update && yum clean all
 COPY tre_rapb_trigger.py ${LAMBDA_TASK_ROOT}
 
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "tre_rapb_trigger.lambda_handler" ]
+CMD [ "tre_rapb_trigger.handler" ]
