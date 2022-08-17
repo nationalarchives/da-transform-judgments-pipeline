@@ -78,7 +78,7 @@ aws_profile_source aws_profile_target"
   export TRE_STATE_MACHINE_ARN="${state_machine_arn}"
   export TRE_CONSIGNMENT_KEY_PATH='parameters.TDR.reference'
   export TRE_RETRY_KEY_PATH='parameters.TDR.number-of-retries'
-  export PYTHONPATH='../../lambda_functions/tre-sqs-sf-trigger'
+  export PYTHONPATH='../../lambda_functions/tre-rapb-trigger'
   
   python3 run.py "${message}"
 }
