@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 
 # Get environment variable values
-env_temp_bucket = common_lib.get_env_var('S3_TEMPORARY_BUCKET', must_exist=True, must_have_value=True)
+env_out_bucket = common_lib.get_env_var('S3_DRI_OUT_BUCKET', must_exist=True, must_have_value=True)
 
 KEY_NUM_RETRIES='number-of-retries'
 KEY_ERROR='error'
@@ -45,9 +45,10 @@ def handler(event, context):
 
     try:
         # Get input parameters from Lambda function's event object
-        consignment_reference = event['consignment-reference']
-        consignment_type = event['consignment-type']
-        retry_count = int(event[KEY_NUM_RETRIES])
+        s3_data_bucket = event['parameters']['TRE']['s3-bucket']
+        consignment_reference = event['parameters']['TRE']['reference']
+        consignment_type = event['producer']['type']
+        retry_count = int(event['parameters']['TRE']['number-of-retries'])
 
         # Create event copy
         output_event = event.copy()
@@ -59,46 +60,47 @@ def handler(event, context):
             f'consignment_reference="{consignment_reference}" '
             f'consignment_type="{consignment_type}" '
             f'retry_count="{retry_count}" '
-            f'env_temp_bucket="{env_temp_bucket}" ')
+            f's3_data_bucket="{s3_data_bucket}" ')
         # set-up config_dicts x 3 & make bagit data
         s3c = s3_config_dict(consignment_type, consignment_reference, retry_count)
         bc = bagit_config_dict(consignment_reference)
-        info_dict = object_lib.s3_object_to_dictionary(env_temp_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAG_INFO_TEXT"])
-        manifest_dict = checksum_lib.get_manifest_s3(env_temp_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_MANIFEST"])
-        csv_data = object_lib.s3_object_to_csv(env_temp_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_METADATA"])
+        info_dict = object_lib.s3_object_to_dictionary(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAG_INFO_TEXT"])
+        manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_MANIFEST"])
+        csv_data = object_lib.s3_object_to_csv(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_METADATA"])
         bagit_data = BagitData(bc, info_dict, manifest_dict, csv_data)
         dc = dri_config_dict(consignment_reference, bagit_data.consignment_series)
         # csv files
         closure_csv = bagit_data.to_closure(dc)
-        object_lib.string_to_s3_object(closure_csv, env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
+        object_lib.string_to_s3_object(closure_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
         metadata_csv = bagit_data.to_metadata(dc)
-        object_lib.string_to_s3_object(metadata_csv, env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])
+        object_lib.string_to_s3_object(metadata_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])
         # checksums for csv files
-        metadata_checksum = checksum_lib.get_s3_object_checksum(env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])
+        metadata_checksum = checksum_lib.get_s3_object_checksum(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])
         object_lib.string_to_s3_object(f'{metadata_checksum}  {dc["METADATA"]}\n',
-                                       env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_CHECKSUM_IN_SIP"])
-        closure_checksum = checksum_lib.get_s3_object_checksum(env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
+                                       s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_CHECKSUM_IN_SIP"])
+        closure_checksum = checksum_lib.get_s3_object_checksum(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
         object_lib.string_to_s3_object(f'{closure_checksum}  {dc["CLOSURE"]}\n',
-                                       env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_CHECKSUM_IN_SIP"])
+                                       s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_CHECKSUM_IN_SIP"])
         # write schemas
         with open('metadata-schema.txt') as file:
-            object_lib.string_to_s3_object(file.read(), env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_SCHEMA_IN_SIP"])
+            object_lib.string_to_s3_object(file.read(), s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_SCHEMA_IN_SIP"])
         with open('closure-schema.txt') as file:
-            object_lib.string_to_s3_object(file.read(), env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_SCHEMA_IN_SIP"])
+            object_lib.string_to_s3_object(file.read(), s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_SCHEMA_IN_SIP"])
         # zip it all up
-        data_objects = object_lib.s3_ls(env_temp_bucket, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"])
+        data_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"])
         data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"], dc["INTERNAL_PREFIX"])
-        metadata_objects = object_lib.s3_ls(env_temp_bucket, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"])
+        metadata_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"])
         metadata_objects_to_zip = tar_lib.S3objectsToZip(metadata_objects, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"], dc["INTERNAL_PREFIX"])
         sip_zip_object = dc["BATCH"] + ".tar.gz"
         tar_lib.s3_objects_to_s3_tar_gz_file_with_prefix_substitution(
-            s3_bucket_in=env_temp_bucket,
+            s3_bucket_in=s3_data_bucket,
             s3_objects_with_prefix_subs=(metadata_objects_to_zip, data_objects_to_zip),
-            tar_gz_object=s3c["PREFIX_TO_SIP"] + sip_zip_object
+            tar_gz_object=s3c["PREFIX_TO_SIP"] + sip_zip_object,
+            s3_bucket_out=env_out_bucket
         )
         # make the checksum of the zip
-        sip_zip_checksum = checksum_lib.get_s3_object_checksum(env_temp_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object)
-        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_temp_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object + ".sha256")
+        sip_zip_checksum = checksum_lib.get_s3_object_checksum(env_out_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object)
+        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_out_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object + ".sha256")
 
     except ValueError as e:
         logging.error(f'handler error: {str(e)}')

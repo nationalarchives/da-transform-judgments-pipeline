@@ -4,7 +4,8 @@ import boto3  # https://boto3.amazonaws.com/v1/documentation/api/latest/referenc
 import tarfile  # https://docs.python.org/3/library/tarfile.html
 import io
 import os
-import collections
+import collections.abc
+import datetime
 from s3_lib import common_lib
 
 # Set global logging options; AWS environment may override this though
@@ -165,9 +166,10 @@ def s3_objects_to_s3_tar_gz_file_with_prefix_substitution(
                     raise common_lib.S3LibError(
                         f'Unable to find key "{s3_object}" in '
                         f'bucket "{s3_bucket_in}". {str(e)}')
-                # Determine file name inside tar, and its size
+                # Determine file name inside tar, and its size + last modified
                 tar_info = tarfile.TarInfo(object_name)
                 tar_info.size = s3_object['ContentLength']
+                tar_info.mtime = datetime.datetime.timestamp(s3_object['LastModified'])
                 tar.addfile(tar_info, io.BytesIO(s3_object['Body'].read()))
                 tar_items.append({'name': object_name, 'size': tar_info.size})
     finally:
@@ -198,7 +200,7 @@ class S3objectsToZip:
 
 
 def get_iterable(x):
-    if isinstance(x, collections.Iterable):
+    if isinstance(x, collections.abc.Iterable):
         return x
     else:
         return (x,)

@@ -2,36 +2,45 @@
 set -e
 
 main() {
-  if [ $# -lt 4 ] || [ $# -gt 4 ]; then
-    echo "Usage: s3_bucket consignment_reference consignment_type number_of_retries"
+  if [ $# -lt 5 ] || [ $# -gt 5 ]; then
+    echo "Usage: s3_bucket_in s3_bucket_out consignment_reference consignment_type number_of_retries"
     return 1
   fi
 
-  s3_bucket="$1"
-  consignment_reference="$2"
-  consignment_type="$3"
-  number_of_retries="$4"
+  s3_bucket_in="$1"
+  s3_bucket_out="$2"
+  consignment_reference="$3"
+  consignment_type="$4"
+  number_of_retries="$5"
 
   #tmp clean up
   aws s3 rm s3://dev-tre-temp/consignments/standard/TDR-2022-NQ3/0/sip --recursive
 
   export PYTHONPATH=../../lambda_functions/tre-bagit-to-dri-sip:../../s3_lib
-  export S3_TEMPORARY_BUCKET="${s3_bucket}"
+  export S3_DRI_OUT_BUCKET="${s3_bucket_out}"
+
 
   printf -v event '{
-    "consignment-reference": "%s",
-    "consignment-type": "%s",
-    "number-of-retries": %s
+    "producer": {
+      "type": "%s"
+    },
+    "parameters": {
+      "TRE": {
+      "reference": "%s",
+      "s3-bucket": "%s",
+      "number-of-retries": %s
+      }
+    }
   }' \
-    "${consignment_reference}" \
     "${consignment_type}" \
+    "${consignment_reference}" \
+    "${s3_bucket_in}" \
     "${number_of_retries}"
-
 
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
   python3 test-bagit-to-dri-sip.py "${event}"
-  aws s3api get-object --bucket dev-tre-temp  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz MOCKA101Y22TBNQ3_actual.tar.gz
-  aws s3api get-object --bucket dev-tre-temp  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz.sha256 MOCKA101Y22TBNQ3_actual.tar.gz.sha256
+  aws s3api get-object --bucket dev-tre-dpsg-out  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz MOCKA101Y22TBNQ3_actual.tar.gz
+  aws s3api get-object --bucket dev-tre-dpsg-out  --key consignments/standard/TDR-2022-NQ3/0/sip/MOCKA101Y22TBNQ3.tar.gz.sha256 MOCKA101Y22TBNQ3_actual.tar.gz.sha256
   mkdir -p /tmp/tre-test/actual
   tar -xf MOCKA101Y22TBNQ3_actual.tar.gz -C /tmp/tre-test/actual
   mkdir -p /tmp/tre-test/expected
@@ -51,7 +60,7 @@ main() {
   rm -rf /tmp/tre-test/*
   rm MOCKA101Y22TBNQ3_actual.tar.gz
   rm MOCKA101Y22TBNQ3_actual.tar.gz.sha256
-  aws s3 rm s3://dev-tre-temp/consignments/standard/TDR-2022-NQ3/0/sip --recursive
+  aws s3 rm s3://dev-tre-dpsg-out/consignments/standard/TDR-2022-NQ3/0/sip --recursive
 }
 
 main "$@"
