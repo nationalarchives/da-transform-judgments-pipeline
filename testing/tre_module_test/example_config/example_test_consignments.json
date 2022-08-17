@@ -18,9 +18,9 @@
         "tar-metadata-file": "?-bad/TRE-?-bad-metadata.json"
     },
     "test-parser-error": {
-        "consignment-ref": "?-invalid-docx",
-        "s3-key-bagit": "consignments/judgements/?-invalid-docx.tar.gz",
-        "s3-key-checksum": "consignments/judgements/?-invalid-docx.tar.gz.sha256",
-        "tar-metadata-file": "?-invalid-docx/TRE-?-invalid-docx-metadata.json"
+        "consignment-ref": "?-bad-doc",
+        "s3-key-bagit": "consignments/judgements/?-bad-doc.tar.gz",
+        "s3-key-checksum": "consignments/judgements/?-bad-doc.tar.gz.sha256",
+        "tar-metadata-file": "?-bad-doc/TRE-?-bad-doc-metadata.json"
     }
 }

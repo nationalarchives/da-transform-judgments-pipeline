@@ -1,9 +1,15 @@
 FROM public.ecr.aws/lambda/python:3.8
 
-RUN yum -y update && yum clean all
-
 # Copy function code
 COPY tre_bagit_to_dri_sip.py ${LAMBDA_TASK_ROOT}
+# Copy schemas that will be added to dri-sip
+COPY closure-schema.txt ${LAMBDA_TASK_ROOT}
+COPY metadata-schema.txt ${LAMBDA_TASK_ROOT}
+
+# Install the function's dependencies using file requirements.txt
+COPY "*.whl" ./
+COPY tmp-build-requirements.txt ./requirements.txt
+RUN  pip3 install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
 CMD [ "tre_bagit_to_dri_sip.handler" ]

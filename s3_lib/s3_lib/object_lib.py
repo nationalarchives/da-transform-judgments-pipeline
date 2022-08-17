@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import csv
 import logging
 import requests  # https://docs.python-requests.org/en/master/api/
 import hashlib  # https://docs.python.org/3/library/hashlib.html
@@ -225,6 +226,20 @@ def s3_object_to_dictionary(s3_bucket, s3_key, separator=':'):
             dictionary[key] = value
     logger.info('s3_object_to_dictionary return')
     return dictionary
+
+
+def s3_object_to_csv(s3_bucket, s3_key):
+    """
+    Get s3 object `s3_key' in `s3_bucket` as csv.
+    """
+    logger.info(f's3_object_to_csv start: s3_bucket={s3_bucket} s3_key={s3_key}')
+    s3_client = boto3.client('s3')
+    s3o = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    reader = codecs.getreader(ENCODING_UTF8)
+    csv_data = csv.DictReader(reader(s3o['Body']))
+    logger.info('s3_object_to_csv return')
+    return csv_data
+
 
 def get_s3_object_presigned_url(bucket, key, expiry):
     """
