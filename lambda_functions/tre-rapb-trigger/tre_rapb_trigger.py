@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 PATH_SEPARATOR = '.'
 NAME_SEPARATOR = '-'
-UNKNOWN_VALUE = '?'
+UNKNOWN_VALUE = '_'
 EVENT_SOURCE_ARN = 'eventSourceARN'
 KEY_RECORDS = 'Records'
 KEY_UUIDS = 'UUIDs'
