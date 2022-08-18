@@ -67,17 +67,18 @@ aws_profile_source aws_profile_target"
     ../v2_message_create.sh \
       "${uuid_list}" \
       'TDR' \
-      'consignment-export' \
+      'da-transform-judgments-pipeline/testing/tre_bagit_validation/run.sh' \
       "${consignment_type}" \
       'dev' \
+      'consignment-export' \
       "${tdr_parameters}"
   )"
   
   printf 'Generate input message:\n%s\n' "${message}"
 
   export TRE_STATE_MACHINE_ARN="${state_machine_arn}"
-  export TRE_CONSIGNMENT_KEY_PATH='parameters.TDR.reference'
-  export TRE_RETRY_KEY_PATH='parameters.TDR.number-of-retries'
+  export TRE_CONSIGNMENT_KEY_PATH='parameters.consignment-export.reference'
+  export TRE_RETRY_KEY_PATH='parameters.consignment-export.number-of-retries'
   export PYTHONPATH='../../lambda_functions/tre-rapb-trigger'
   
   python3 run.py "${message}"
