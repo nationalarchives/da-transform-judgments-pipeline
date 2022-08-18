@@ -12,7 +12,7 @@ function main() {
   local bagit_checksum_url="${3}"
   local number_of_retries="${4:-0}"
   
-  printf '    "TDR": {
+  printf '    "consignment-export": {
       "resource": {
         "resource-type": "Object",
         "access-type": "url",

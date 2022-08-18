@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "properties": {
-        "TRE": {
+        "bagit-received": {
             "type": "object",
             "properties": {
                 "errors": {
@@ -65,7 +65,7 @@
         }
     },
     "required": [
-        "TRE"
+        "bagit-received"
     ],
     "additionalProperties": false
 }

@@ -45,26 +45,38 @@
                 },
                 "environment": {
                     "type": "string"
+                },
+                "event-name": {
+                    "type": "string",
+                    "enum": [
+                        "consignment-export",
+                        "bagit-received",
+                        "bagit-validated"
+                    ]
+                },
+                "version": {
+                    "type": ["string", "object"]
                 }
             },
             "required": [
                 "name",
                 "process",
                 "type",
-                "environment"
+                "environment",
+                "event-name"
             ],
             "additionalProperties": false
         },
         "parameters": {
             "type": "object",
             "properties": {
-                "TDR": {
+                "consignment-export": {
                     "type": "object"
                 },
-                "TRE": {
+                "bagit-received": {
                     "type": "object"
                 },
-                "Access": {
+                "bagit-validated": {
                     "type": "object"
                 }
             },
@@ -74,17 +86,17 @@
                 },
                 {
                     "required": [
-                        "TDR"
+                        "consignment-export"
                     ]
                 },
                 {
                     "required": [
-                        "TRE"
+                        "bagit-received"
                     ]
                 },
                 {
                     "required": [
-                        "Access"
+                        "bagit-validated"
                     ]
                 }
             ],
