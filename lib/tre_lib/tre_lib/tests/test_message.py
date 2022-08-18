@@ -32,6 +32,7 @@ class TestMessage(unittest.TestCase):
     PRODUCER = 'TRE'
     TYPE_JUDGMENT='judgment'
     TYPE_STANDARD='standard'
+    EVENT_NAME = 'consignment-export'  # arbitrary choice, need a valid value
 
     def test_minimal_ok(self):
         PROCESS = 'test_str_output process'
@@ -42,6 +43,7 @@ class TestMessage(unittest.TestCase):
             producer=self.PRODUCER,
             process=PROCESS,
             type=TYPE,
+            event_name=self.EVENT_NAME,
             environment=ENVIRONMENT)
 
         json_output = json.loads(tre_message.to_json_str())
@@ -121,6 +123,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process=None,
                 type='t',
+                event_name=self.EVENT_NAME,
                 environment='e')
             self.fail('No ValueError with missing process argument')
         except ValueError as e:
@@ -134,6 +137,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='',
                 type='t',
+                event_name=self.EVENT_NAME,
                 environment='e')
             self.fail('No ValueError with empty process argument')
         except ValueError as e:
@@ -146,12 +150,14 @@ class TestMessage(unittest.TestCase):
             producer=self.PRODUCER,
             process='p',
             type=None,
+            event_name=self.EVENT_NAME,
             environment='e')
 
         Message(
             producer=self.PRODUCER,
             process='p',
             type='',
+            event_name=self.EVENT_NAME,
             environment='e')
 
     def test_environment_none(self):
@@ -160,6 +166,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='p',
                 type='t',
+                event_name=self.EVENT_NAME,
                 environment=None)
             self.fail('No ValueError with missing environment argument')
         except ValueError as e:
@@ -173,6 +180,7 @@ class TestMessage(unittest.TestCase):
                 producer=self.PRODUCER,
                 process='p',
                 type='t',
+                event_name=self.EVENT_NAME,
                 environment='')
             self.fail('No ValueError with empty environment argument')
         except ValueError as e:
@@ -193,6 +201,7 @@ class TestMessage(unittest.TestCase):
             producer=PRODUCER_1,
             process=PROCESS_1,
             type=TYPE,
+            event_name=self.EVENT_NAME,
             environment=ENVIRONMENT)
 
         self.assertTrue(len(m1.new_message[Message.KEY_UUIDS]) == 1,
@@ -204,6 +213,7 @@ class TestMessage(unittest.TestCase):
             producer=PRODUCER_2,
             process=PROCESS_2,
             type=TYPE,
+            event_name=self.EVENT_NAME,
             environment=ENVIRONMENT,
             prior_message=m1.to_dict())
 

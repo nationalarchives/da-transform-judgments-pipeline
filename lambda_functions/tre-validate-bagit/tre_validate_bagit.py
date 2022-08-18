@@ -29,6 +29,8 @@ env_process = common_lib.get_env_var(
 env_environment = common_lib.get_env_var(
     'TRE_ENVIRONMENT', must_exist=True, must_have_value=True)
 
+OUTPUT_EVENT_NAME = 'bagit-received'
+
 KEY_ERRORS = 'errors'
 KEY_ERROR = 'error'
 KEY_S3_BUCKET = 's3-bucket'
@@ -40,7 +42,6 @@ KEY_VALUE = 'value'
 KEY_PRODUCER = 'producer'
 KEY_TYPE = 'type'
 KEY_S3_BAGIT_NAME = 's3-bagit-name'
-KEY_TDR = 'TDR'
 
 
 def validate_input(event: dict):
@@ -96,14 +97,16 @@ def handler(event, context):
 
     Ref: https://github.com/nationalarchives/da-transform-dev-documentation/blob/master/architecture-decision-records/001-Enhanced-message-structure.md
     """
-    logger.info(f'handler start')
+    logger.info('handler start')
     logger.info(f'type(event)="{type(event)}')
     logger.info(f'event="{event}"')
     validate_input(event=event)
-    logger.info(f'configuring initial output message')
+    logger.info('configuring initial output message')
 
     # Get required values from input event's parameters block
-    tdr_params = event[Message.KEY_PARAMETERS][KEY_TDR]
+    input_event_name = event[Message.KEY_PRODUCER][Message.KEY_EVENT_NAME]
+    logger.info(f'input_event_name={input_event_name}')
+    tdr_params = event[Message.KEY_PARAMETERS][input_event_name]
     consignment_reference = tdr_params[KEY_REFERENCE]
     s3_bagit_url = tdr_params[KEY_RESOURCE][KEY_VALUE]
     s3_sha_url = tdr_params[KEY_RESOURCE_VALIDATION][KEY_VALUE]
@@ -113,7 +116,7 @@ def handler(event, context):
 
     # Setup initial output parameters block fields
     output_parameter_block = {
-        env_producer: {
+        OUTPUT_EVENT_NAME: {
             KEY_REFERENCE: consignment_reference,
             KEY_S3_BUCKET: env_output_bucket,
             KEY_NUM_RETRIES: retry_count,
@@ -125,6 +128,7 @@ def handler(event, context):
     output_message = Message(
         producer=env_producer,
         process=env_process,
+        event_name=OUTPUT_EVENT_NAME,
         environment=env_environment,
         type=consignment_type,
         prior_message=event,
@@ -141,7 +145,7 @@ def handler(event, context):
         # Determine target s3 object names from the corresponding input URLs
         bagit_name = os.path.basename(urlparse(s3_bagit_url).path)
         s3_bagit_name = f'{output_object_prefix}/{bagit_name}'
-        output_parameter_block[env_producer][KEY_S3_BAGIT_NAME] = s3_bagit_name
+        output_parameter_block[OUTPUT_EVENT_NAME][KEY_S3_BAGIT_NAME] = s3_bagit_name
         sha_name = os.path.basename(urlparse(s3_sha_url).path)
         s3_sha_name = f'{output_object_prefix}/{sha_name}'
 
@@ -194,7 +198,7 @@ def handler(event, context):
     except ValueError as e:
         logging.error(f'handler error: {str(e)}')
         error_list.append({KEY_ERROR: str(e)})
-        output_parameter_block[env_producer][KEY_NUM_RETRIES] = retry_count + 1
+        output_parameter_block[OUTPUT_EVENT_NAME][KEY_NUM_RETRIES] = retry_count + 1
 
     validate_output(output_message.to_dict())
     logger.info('handler completed OK')

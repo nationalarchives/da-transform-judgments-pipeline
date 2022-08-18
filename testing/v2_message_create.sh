@@ -6,8 +6,9 @@
 set -e
 
 function main() {
-  if [ $# -lt 6 ] || [ $# -gt 7 ]; then
-    echo "Usage: uuid_list producer process type environment parameters [version]"
+  if [ $# -lt 7 ] || [ $# -gt 8 ]; then
+    echo "Usage: uuid_list producer process type environment event_name\
+parameters [version]"
     return 1
   fi
 
@@ -16,8 +17,9 @@ function main() {
   local process="${3}"
   local type="${4}"
   local environment="${5}"
-  local parameters="${6}"
-  local version="${7:-1.0.0}"
+  local event_name="${6}"
+  local parameters="${7}"
+  local version="${8:-1.0.0}"
 
   local ns_utc
   ns_utc="$(python3 -c 'import time; print(time.time_ns())')"
@@ -30,7 +32,8 @@ function main() {
     "name": "%s",
     "process": "%s",
     "type": "%s",
-    "environment": "%s"
+    "environment": "%s",
+    "event-name": "%s"
   },
   "parameters": {
 %s
@@ -43,6 +46,7 @@ function main() {
       "${process}" \
       "${type}" \
       "${environment}" \
+      "${event_name}" \
       "${parameters}"
 }
 

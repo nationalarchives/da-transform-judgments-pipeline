@@ -32,7 +32,7 @@ class Message():
     """
     Represents a message payload.
     """
-    MESSAGE_VERSION = '1.0.0'
+    MESSAGE_VERSION = '0.0.2'
     KEY_VERSION = 'version'
     KEY_TIMESTAMP = 'timestamp'
     KEY_UUIDS = 'UUIDs'
@@ -41,6 +41,7 @@ class Message():
     KEY_NAME = 'name'
     KEY_PROCESS = 'process'
     KEY_TYPE = 'type'
+    KEY_EVENT_NAME = 'event-name'
     KEY_ENVIRONMENT = 'environment'
     KEY_PARAMETERS = 'parameters'
 
@@ -58,6 +59,7 @@ class Message():
         environment: str,
         producer: str,
         process: str,
+        event_name: str,
         parameters: dict = None,
         prior_message: dict = None
     ):
@@ -72,6 +74,8 @@ class Message():
             raise ValueError('Empty "producer" argument')
         elif not process:
             raise ValueError('Empty "process" argument')
+        elif not event_name:
+            raise ValueError('Empty "event_name" argument')
         elif parameters and not isinstance(parameters, dict):
             raise ValueError(f'parameters is not dict type')
         elif prior_message is not None:
@@ -83,6 +87,7 @@ class Message():
             environment: str,
             producer: str,
             process: str,
+            event_name: str,
             parameters: dict = None,
             type: str = None,
             prior_message: dict = None,
@@ -97,6 +102,9 @@ class Message():
             The system name for the message; e.g. "TRE", "TDR", etc
         process: str
             The name of the process that will send the message
+        event_name: str
+            The name of the event that is occurring and will be sent; e.g.
+            "bagit-validated", "bagit-export", etc
         parameters: dict
             The content for this message's parameters section
         type: str
@@ -110,7 +118,7 @@ class Message():
         """
         logger.info('__init__')
         self.validate_input(
-            producer=producer, process=process,
+            producer=producer, process=process, event_name=event_name,
             environment=environment, parameters=parameters,
             prior_message=prior_message)
 
@@ -139,6 +147,7 @@ class Message():
         self.new_message[self.KEY_PRODUCER][self.KEY_ENVIRONMENT] = environment
         self.new_message[self.KEY_PRODUCER][self.KEY_NAME] = producer
         self.new_message[self.KEY_PRODUCER][self.KEY_PROCESS] = process
+        self.new_message[self.KEY_PRODUCER][self.KEY_EVENT_NAME] = event_name
 
         # Default to type of prior_message, but type parameter overrides it
         if type:

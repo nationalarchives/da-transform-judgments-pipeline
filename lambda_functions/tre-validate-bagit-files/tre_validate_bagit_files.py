@@ -26,7 +26,8 @@ env_process = common_lib.get_env_var(
 env_environment = common_lib.get_env_var(
     'TRE_ENVIRONMENT', must_exist=True, must_have_value=True)
 
-KEY_TRE = 'TRE'
+OUTPUT_EVENT_NAME = 'bagit-validated'
+
 KEY_NUM_RETRIES = 'number-of-retries'
 KEY_REFERENCE = 'reference'
 KEY_S3_BUCKET = 's3-bucket'
@@ -95,7 +96,9 @@ def handler(event, context):
 
     # Get required values from input event's parameters block
     consignment_type = event[Message.KEY_PRODUCER][KEY_TYPE]
-    parameters = event[Message.KEY_PARAMETERS][KEY_TRE]
+    input_event_name = event[Message.KEY_PRODUCER][Message.KEY_EVENT_NAME]
+    logger.info(f'input_event_name={input_event_name}')
+    parameters = event[Message.KEY_PARAMETERS][input_event_name]
     s3_bucket = parameters[KEY_S3_BUCKET]
     consignment_reference = parameters[KEY_REFERENCE]
     s3_bagit_name = parameters[KEY_S3_BAGIT_NAME]
@@ -106,7 +109,7 @@ def handler(event, context):
 
     # Setup initial output parameters block fields
     output_parameter_block = {
-        env_producer: {
+        OUTPUT_EVENT_NAME: {
             KEY_REFERENCE: consignment_reference,
             KEY_S3_BUCKET: s3_bucket,
             KEY_S3_BAGIT_NAME: s3_bagit_name,
@@ -119,6 +122,7 @@ def handler(event, context):
     output_message = Message(
         producer=env_producer,
         process=env_process,
+        event_name=OUTPUT_EVENT_NAME,
         environment=env_environment,
         type=consignment_type,
         prior_message=event,
@@ -139,11 +143,11 @@ def handler(event, context):
         suffix = '.tar.gz'
         unpacked_folder_name = s3_bagit_name[:-len(
             suffix)] if s3_bagit_name.endswith(suffix) else s3_bagit_name
-        output_parameter_block[env_producer][KEY_S3_OBJECT_ROOT] = unpacked_folder_name
+        output_parameter_block[OUTPUT_EVENT_NAME][KEY_S3_OBJECT_ROOT] = unpacked_folder_name
         checksum_ok_list = checksum_lib.verify_s3_manifest_checksums(
             s3_bucket, unpacked_folder_name)
         logger.info(f'checksum_ok_list={checksum_ok_list}')
-        output_parameter_block[env_producer][KEY_VALIDATED_FILES] = checksum_ok_list
+        output_parameter_block[OUTPUT_EVENT_NAME][KEY_VALIDATED_FILES] = checksum_ok_list
 
         # Determine expected file counts (from manifest files)
         # not main manifest itself
@@ -194,7 +198,7 @@ def handler(event, context):
     except ValueError as e:
         logging.error(f'handler error: {str(e)}')
         error_list.append({KEY_ERROR: str(e)})
-        output_parameter_block[env_producer][KEY_NUM_RETRIES] = retry_count + 1
+        output_parameter_block[OUTPUT_EVENT_NAME][KEY_NUM_RETRIES] = retry_count + 1
 
     validate_output(output_message.to_dict())
     logger.info('handler completed OK')

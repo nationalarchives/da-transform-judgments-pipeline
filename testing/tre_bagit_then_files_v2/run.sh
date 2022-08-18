@@ -58,9 +58,10 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
     ../v2_message_create.sh \
       "${uuid_list}" \
       'TDR' \
-      'consignment-export' \
+      'da-transform-judgments-pipeline/testing/tre_bagit_then_files_v2/run.sh' \
       "${consignment_type}" \
       'dev' \
+      'consignment-export' \
       "${tdr_parameters}"
   )"
   
