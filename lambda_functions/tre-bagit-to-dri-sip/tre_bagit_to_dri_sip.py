@@ -31,7 +31,7 @@ KEY_OUTPUT_MESSAGE='output-message'
 
 def handler(event, context):
     """
-    Given a bagit unzip sitting in the s3-bucket in event and with location built from the event's
+    Given a bagit unzip sitting in the s3-bucket provided in event object of handler + location built from the event's
     type/consignemnt_ref/retry_number then a dri-sip is built in bucket provided in env variable S3_DRI_OUT_BUCKET at
     type/consignemnt_ref/retry_number/sip
     """
