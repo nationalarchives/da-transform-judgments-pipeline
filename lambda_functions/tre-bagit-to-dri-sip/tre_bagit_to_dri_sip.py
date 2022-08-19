@@ -33,7 +33,7 @@ def handler(event, context):
     """
     Given a bagit unzip sitting in the s3-bucket in event and with location built from the event's
     type/consignemnt_ref/retry_number then a dri-sip is built in bucket provided in env variable S3_DRI_OUT_BUCKET at
-    type/consignemnt_ref/retry_number/sip (and a zip + checksum of that zip are placed next to it)
+    type/consignemnt_ref/retry_number/sip
     """
     logger.info(f'handler start: event="{event}"')
 
