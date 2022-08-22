@@ -2,7 +2,7 @@
 """
 Module to run tre_sqs_sf_trigger.handler; see corresponding run.sh file.
 """
-import tre_rapb_trigger
+import tre_vb_trigger
 import sys
 import json
 
@@ -22,5 +22,5 @@ event = {
     ]
 }
 
-result = tre_rapb_trigger.handler(event=event, context=None)
+result = tre_vb_trigger.handler(event=event, context=None)
 print(f'result:\n{result}')
