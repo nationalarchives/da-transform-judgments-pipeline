@@ -18,7 +18,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # Get environment variable values
 env_out_bucket = common_lib.get_env_var('S3_DRI_OUT_BUCKET', must_exist=True, must_have_value=True)
 
