@@ -21,12 +21,12 @@ To run `tre-validate-bagit` then `tre-validate-bagit-files` locally:
 
     # Omit s3 region in build.sh calls to avoid ECR push. The Docker build is
     # not really needed, just the generated tmp-build-requirements.txt files:
-    (cd ../../lambda_functions && ./build.sh tre-validate-bagit)
-    (cd ../../lambda_functions/tre-validate-bagit && \
+    (cd ../../lambda_functions && ./build.sh tre-vb-validate-bagit)
+    (cd ../../lambda_functions/tre-vb-validate-bagit && \
         pip3 install --requirement tmp-build-requirements.txt)
 
-    (cd ../../lambda_functions && ./build.sh tre-validate-bagit-files)
-    (cd ../../lambda_functions/tre-validate-bagit-files && \
+    (cd ../../lambda_functions && ./build.sh tre-vb-validate-bagit-files)
+    (cd ../../lambda_functions/tre-vb-validate-bagit-files && \
         pip3 install --requirement tmp-build-requirements.txt)
     ```
 

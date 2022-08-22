@@ -28,7 +28,7 @@ aws_profile_source aws_profile_target"
       --output text
   )"
   
-  printf 'state_machine_arn="%s"\n' "${state_machine_arn}"
+  printf 'state_machine_arn="%s"\n' "${state_machine_arn:?}"
   printf 'aws_profile_source="%s"\n' "${aws_profile_source}"
   printf 'aws_profile_target="%s"\n' "${aws_profile_target}"
 
@@ -79,9 +79,9 @@ aws_profile_source aws_profile_target"
   export TRE_STATE_MACHINE_ARN="${state_machine_arn}"
   export TRE_CONSIGNMENT_KEY_PATH='parameters.consignment-export.reference'
   export TRE_RETRY_KEY_PATH='parameters.consignment-export.number-of-retries'
-  export PYTHONPATH='../../lambda_functions/tre-rapb-trigger'
+  export PYTHONPATH='../../lambda_functions/tre-vb-trigger'
   
-  python3 run.py "${message}"
+  AWS_PROFILE="${aws_profile_target}" python3 run.py "${message}"
 }
 
 main "$@"

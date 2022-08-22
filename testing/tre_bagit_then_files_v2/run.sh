@@ -68,7 +68,7 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
 
   # export PYTHONPATH=../../tre-validate-bagit:../../s3_lib
-  export PYTHONPATH=../../lambda_functions/tre-validate-bagit:../../lambda_functions/tre-validate-bagit-files
+  export PYTHONPATH=../../lambda_functions/tre-vb-validate-bagit:../../lambda_functions/tre-vb-validate-bagit-files
   export TRE_ENVIRONMENT='localhost'
   export TRE_S3_BUCKET="${s3_bucket_target}"
   export TRE_SYSTEM_NAME='TRE'
