@@ -2,7 +2,9 @@ To generate a sample input message and run the step function trigger locally
 to then run the Step Function in AWS:
 
 ```
-state_machine_name='dev-tre-validate-bagit'
+# e.g. dev, test, etc...
+environment=''
+state_machine_name="${environment}-tre-validate-bagit"
 
 ./run.sh "${state_machine_name}" \
   "${s3_bucket_source}"
