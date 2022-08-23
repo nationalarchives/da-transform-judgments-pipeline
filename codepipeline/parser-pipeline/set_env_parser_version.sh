@@ -57,13 +57,22 @@ print(
     return 1
   fi
 
-    local python_set_version="import sys
+  local python_set_version="import sys
 import json
 tfvar_record = json.load(sys.stdin)
-new_version = sys.argv[1]
-if len([int(i) for i in new_version.lstrip('v').split('.')]) != 3:
-    raise ValueError(f'Version \"{new_version}\" is not valid') 
-tfvar_record['image_versions']['tre_run_judgment_parser'] = new_version
+new_parser_version = sys.argv[1]
+if len([int(i) for i in new_parser_version.lstrip('v').split('.')]) != 3:
+    raise ValueError(f'Parser version \"{new_parser_version}\" is not valid')
+tfvar_record['image_versions']['tre_run_judgment_parser'] = new_parser_version
+KEY_TRE_VERSION = 'tre_version'
+tre_version = tfvar_record[KEY_TRE_VERSION]
+tre_version_list = [int(i) for i in tre_version.lstrip('v').split('.')]
+if len(tre_version_list) != 3:
+  raise ValueError(f'TRE version \"{new_parser_version}\" is not valid')
+tre_version_list[2] = int(tre_version_list[2]) + 1
+tre_version_list_str = [str(i) for i in tre_version_list]
+new_tre_version = '.'.join(tre_version_list_str)
+tfvar_record[KEY_TRE_VERSION] = new_tre_version
 print(json.dumps(tfvar_record, indent=2))"
 
   local new_value
@@ -80,10 +89,10 @@ print(json.dumps(tfvar_record, indent=2))"
     --value "${new_value}" \
     --overwrite;
   then
-    printf 'Parameter %s has been updated from %s to %s\n' \
+    printf 'Parameter %s has been updated from parser version %s to %s\n' \
         "${parameter_name}" "${current_parser_version}" "${new_parser_version}"
   else
-    printf 'Error updating parameter %s from %s to %s\n' \
+    printf 'Error updating parameter %s from parser version %s to %s\n' \
         "${parameter_name}" "${current_parser_version}" "${new_parser_version}"
     return 1
   fi
