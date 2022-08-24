@@ -18,22 +18,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # Get environment variable values
 env_out_bucket = common_lib.get_env_var('S3_DRI_OUT_BUCKET', must_exist=True, must_have_value=True)
+env_tre_presigned_url_expiry = common_lib.get_env_var('TRE_PRESIGNED_URL_EXPIRY', must_exist=True, must_have_value=True)
 
 KEY_NUM_RETRIES='number-of-retries'
 KEY_ERROR='error'
 KEY_ERROR_MESSAGE='error-message'
 KEY_S3_BUCKET='s3-bucket'
 KEY_OUTPUT_MESSAGE='output-message'
+KEY_SIP_ZIP_URL="sip-zip-url"
+KEY_SIP_ZIP_URL_SHA256="sip-zip-sha256-url"
 
 
 def handler(event, context):
     """
-    Given a bagit unzip sitting in the temp-bucket determined by env var and with location built from the event's
-    type/consignemnt_ref/retry_number then a dri-sip is built in the same temp-bucket at
-    type/consignemnt_ref/retry_number/sip (and a zip + checksum of that zip are placed next to it)
+    Given a bagit unzip sitting in the s3-bucket provided in event object of handler + location built from the event's
+    type/consignemnt_ref/retry_number then a dri-sip is built in bucket provided in env variable S3_DRI_OUT_BUCKET at
+    type/consignemnt_ref/retry_number/sip
     """
     logger.info(f'handler start: event="{event}"')
 
@@ -45,10 +47,10 @@ def handler(event, context):
 
     try:
         # Get input parameters from Lambda function's event object
-        s3_data_bucket = event['parameters']['TRE']['s3-bucket']
-        consignment_reference = event['parameters']['TRE']['reference']
+        s3_data_bucket = event['parameters']['bagit-validated']['s3-bucket']
+        consignment_reference = event['parameters']['bagit-validated']['reference']
         consignment_type = event['producer']['type']
-        retry_count = int(event['parameters']['TRE']['number-of-retries'])
+        retry_count = int(event['parameters']['bagit-validated']['number-of-retries'])
 
         # Create event copy
         output_event = event.copy()
@@ -92,15 +94,27 @@ def handler(event, context):
         metadata_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"])
         metadata_objects_to_zip = tar_lib.S3objectsToZip(metadata_objects, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"], dc["INTERNAL_PREFIX"])
         sip_zip_object = dc["BATCH"] + ".tar.gz"
+        sip_zip_key= s3c["PREFIX_TO_SIP"] + sip_zip_object
         tar_lib.s3_objects_to_s3_tar_gz_file_with_prefix_substitution(
             s3_bucket_in=s3_data_bucket,
             s3_objects_with_prefix_subs=(metadata_objects_to_zip, data_objects_to_zip),
-            tar_gz_object=s3c["PREFIX_TO_SIP"] + sip_zip_object,
+            tar_gz_object=sip_zip_key,
             s3_bucket_out=env_out_bucket
         )
         # make the checksum of the zip
-        sip_zip_checksum = checksum_lib.get_s3_object_checksum(env_out_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object)
-        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_out_bucket, s3c["PREFIX_TO_SIP"] + sip_zip_object + ".sha256")
+        sip_zip_checksum = checksum_lib.get_s3_object_checksum(env_out_bucket, sip_zip_key)
+        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_out_bucket, sip_zip_key + '.sha256')
+        # make presigned urls and add to output message
+        presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
+            bucket=env_out_bucket,
+            key=sip_zip_key,
+            expiry=env_tre_presigned_url_expiry)
+        presigned_checksum_url = object_lib.get_s3_object_presigned_url(
+            bucket=env_out_bucket,
+            key=sip_zip_key + '.sha256',
+            expiry=env_tre_presigned_url_expiry)
+        output_event[KEY_SIP_ZIP_URL] = presigned_tar_gz_url
+        output_event[KEY_SIP_ZIP_URL_SHA256] = presigned_checksum_url
 
     except ValueError as e:
         logging.error(f'handler error: {str(e)}')
