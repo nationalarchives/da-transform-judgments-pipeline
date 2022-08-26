@@ -1,6 +1,7 @@
 FROM public.ecr.aws/lambda/python:3.8
 
-RUN yum -y update && yum clean all
+RUN yum -y update \
+    && yum clean all
 
 # Copy function code
 COPY tre_sqs_sf_trigger.py ${LAMBDA_TASK_ROOT}
