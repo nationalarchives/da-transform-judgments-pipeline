@@ -7,7 +7,8 @@ sns = boto3.client('sns')
 tre_out_topic_arn = os.environ['TRE_OUT_TOPIC_ARN']
 
 def lambda_handler(event, context):
-    record = event['Record'][0]
+    print(event)
+    record = event['Records'][0]
     message = json.loads(record['body']['Message'])
 
     response = sns.publish(
