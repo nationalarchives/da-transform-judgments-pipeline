@@ -22,7 +22,6 @@ KEY_RECORDS = 'Records'
 KEY_UUIDS = 'UUIDs'
 TRE_STATE_MACHINE_ARN = os.environ['TRE_STATE_MACHINE_ARN']
 TRE_CONSIGNMENT_KEY_PATH = os.environ['TRE_CONSIGNMENT_KEY_PATH']
-TRE_RETRY_KEY_PATH = os.environ['TRE_RETRY_KEY_PATH']
 
 client = boto3.client('stepfunctions')
 
@@ -65,7 +64,6 @@ def get_latest_uuid(tre_message: dict) -> str:
 def handler(event, context):
     logger.info(f'TRE_STATE_MACHINE_ARN={TRE_STATE_MACHINE_ARN}')
     logger.info(f'TRE_CONSIGNMENT_KEY_PATH={TRE_CONSIGNMENT_KEY_PATH}')
-    logger.info(f'TRE_RETRY_KEY_PATH={TRE_RETRY_KEY_PATH}')
     logger.info(f'event:\n{event}')
 
     if KEY_RECORDS not in event:
@@ -92,14 +90,6 @@ def handler(event, context):
     if consignment_ref is None:
         consignment_ref = UNKNOWN_VALUE
 
-    # Get retry number for the execution name
-    retry_keys = list(reversed(TRE_RETRY_KEY_PATH.split(PATH_SEPARATOR)))
-    logger.info(f'retry_keys={retry_keys}')
-    retry_number = get_dict_key_value(source=tre_message, key_path=retry_keys)
-    logger.info(f'retry_number={retry_number}')
-    if retry_number is None:
-        retry_number = UNKNOWN_VALUE
-
     # Get event source (SQS queue name) for the execution name
     event_source = UNKNOWN_VALUE
     if EVENT_SOURCE_ARN in event_record:
@@ -111,7 +101,7 @@ def handler(event, context):
     logger.info(f'latest_uuid={latest_uuid}')
 
     # Build execution name
-    name_list = [consignment_ref, str(retry_number), event_source, latest_uuid]
+    name_list = [consignment_ref, event_source, latest_uuid]
     logger.info(f'name_list={name_list}')
     execution_name = NAME_SEPARATOR.join(name_list)
     logger.info(f'execution_name={execution_name}')
