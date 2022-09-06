@@ -2,10 +2,9 @@
 set -e
 
 main() {
-  if [ $# -ne 9 ]; then
-    echo "Usage: sns_arn s3_bucket_source s3_object_bagit \
-s3_object_sha consignment_reference consignment_type number_of_retries \
-aws_profile_source aws_profile_target"
+  if [ $# -ne 8 ]; then
+    echo "Usage: sns_arn s3_bucket_source s3_object_bagit s3_object_sha \
+consignment_reference consignment_type aws_profile_source aws_profile_target"
     return 1
   fi
 
@@ -15,9 +14,8 @@ aws_profile_source aws_profile_target"
   local s3_object_sha="${4}"
   local consignment_reference="${5}"
   local consignment_type="${6}"
-  local number_of_retries="${7}"
-  local aws_profile_source="${8:-${AWS_PROFILE:?}}"
-  local aws_profile_target="${9:-${AWS_PROFILE:?}}"
+  local aws_profile_source="${7:-${AWS_PROFILE:?}}"
+  local aws_profile_target="${8:-${AWS_PROFILE:?}}"
 
   printf 'sns_arn="%s"\n' "${sns_arn}"
   printf 'aws_profile_source="%s"\n' "${aws_profile_source}"
@@ -44,8 +42,7 @@ aws_profile_source aws_profile_target"
     ../v2_event_parameters_bagit_available.sh \
         "${consignment_reference}" \
         "${bagit_url}" \
-        "${bagit_checksum_url}" \
-        "${number_of_retries}"
+        "${bagit_checksum_url}"
   )"
 
   printf 'Generated TDR parameter block:\n%s\n' "${tdr_parameters:?}"
@@ -61,7 +58,7 @@ aws_profile_source aws_profile_target"
       'da-transform-judgments-pipeline/testing/simulate_tdr_sns_in/run.sh' \
       "${consignment_type}" \
       'dev' \
-      'consignment-export' \
+      'bagit-available' \
       "${tdr_parameters}"
   )"
   
