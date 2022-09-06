@@ -41,7 +41,7 @@ aws_profile_source aws_profile_target"
 
   local tdr_parameters
   tdr_parameters="$(
-    ../v2_message_parameters_tdr.sh \
+    ../v2_event_parameters_bagit_available.sh \
         "${consignment_reference}" \
         "${bagit_url}" \
         "${bagit_checksum_url}" \
@@ -55,7 +55,7 @@ aws_profile_source aws_profile_target"
   local uuid_list='[{"TDR-UUID": "'"${tdr_uuid}"'"}]'
   
   message="$( \
-    ../v2_message_create.sh \
+    ../v2_event_create.sh \
       "${uuid_list}" \
       'TDR' \
       'da-transform-judgments-pipeline/testing/simulate_tdr_sns_in/run.sh' \
