@@ -2,11 +2,10 @@
 set -e
 
 main() {
-  if [ $# -lt 7 ] || [ $# -gt 9 ]; then
-    echo "Usage: s3_bucket_source \
-s3_object_bagit s3_object_sha \
-consignment_reference consignment_type number_of_retries \
-s3_bucket_target [aws_profile_source] [aws_profile_target]"
+  if [ $# -lt 6 ] || [ $# -gt 8 ]; then
+    echo "Usage: s3_bucket_source s3_object_bagit s3_object_sha \
+consignment_reference consignment_type s3_bucket_target [aws_profile_source] \
+[aws_profile_target]"
     return 1
   fi
 
@@ -15,10 +14,9 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
   local s3_object_sha="$3"
   local consignment_reference="$4"
   local consignment_type="$5"
-  local number_of_retries="$6"
-  local s3_bucket_target="$7"
-  local aws_profile_source="${8:-${AWS_PROFILE:?}}"
-  local aws_profile_target="${9:-${AWS_PROFILE:?}}"
+  local s3_bucket_target="$6"
+  local aws_profile_source="${7:-${AWS_PROFILE:?}}"
+  local aws_profile_target="${8:-${AWS_PROFILE:?}}"
 
   printf 'aws_profile_source="%s"\n' "${aws_profile_source}"
   printf 'aws_profile_target="%s"\n' "${aws_profile_target}"
@@ -39,30 +37,29 @@ s3_bucket_target [aws_profile_source] [aws_profile_target]"
       s3 presign "s3://${s3_bucket_source}/${s3_object_sha}" \
       --expires-in "${presigned_url_expiry_secs:-60}")"
 
-  local tdr_parameters
-  tdr_parameters="$(
-    ../v2_message_parameters_tdr.sh \
+  local event_parameters
+  event_parameters="$(
+    ../v2_event_parameters_bagit_available.sh \
         "${consignment_reference}" \
         "${bagit_url}" \
-        "${bagit_checksum_url}" \
-        "${number_of_retries}"
+        "${bagit_checksum_url}"
   )"
 
-  printf 'Generated TDR parameter block:\n%s\n' "${tdr_parameters}"
+  printf 'Generated parameter block:\n%s\n' "${event_parameters}"
 
-  local tdr_uuid
-  tdr_uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-  local uuid_list='[{"TDR-UUID": "'"${tdr_uuid}"'"}]'
+  local input_uuid
+  input_uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+  local uuid_list='[{"TDR-UUID": "'"${input_uuid}"'"}]'
   
   event="$( \
-    ../v2_message_create.sh \
+    ../v2_event_create.sh \
       "${uuid_list}" \
       'TDR' \
       'da-transform-judgments-pipeline/testing/tre_bagit_then_files_v2/run.sh' \
       "${consignment_type}" \
       'dev' \
-      'consignment-export' \
-      "${tdr_parameters}"
+      'bagit-available' \
+      "${event_parameters}"
   )"
   
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"

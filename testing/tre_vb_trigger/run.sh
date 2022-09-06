@@ -2,9 +2,9 @@
 set -e
 
 main() {
-  if [ $# -lt 8 ] || [ $# -gt 9 ]; then
+  if [ $# -lt 7 ] || [ $# -gt 8 ]; then
     echo "Usage: state_machine_name s3_bucket_source s3_object_bagit \
-s3_object_sha consignment_reference consignment_type number_of_retries \
+s3_object_sha consignment_reference consignment_type \
 aws_profile_source aws_profile_target"
     return 1
   fi
@@ -15,9 +15,8 @@ aws_profile_source aws_profile_target"
   local s3_object_sha="${4}"
   local consignment_reference="${5}"
   local consignment_type="${6}"
-  local number_of_retries="${7}"
-  local aws_profile_source="${8:-${AWS_PROFILE:?}}"
-  local aws_profile_target="${9:-${AWS_PROFILE:?}}"
+  local aws_profile_source="${7:-${AWS_PROFILE:?}}"
+  local aws_profile_target="${8:-${AWS_PROFILE:?}}"
 
   local query='stateMachines[?name==`'${state_machine_name}'`].stateMachineArn'
   local state_machine_arn
@@ -50,11 +49,10 @@ aws_profile_source aws_profile_target"
 
   local tdr_parameters
   tdr_parameters="$(
-    ../v2_message_parameters_tdr.sh \
+    ../v2_event_parameters_bagit_available.sh \
         "${consignment_reference}" \
         "${bagit_url}" \
-        "${bagit_checksum_url}" \
-        "${number_of_retries}"
+        "${bagit_checksum_url}"
   )"
 
   printf 'Generated TDR parameter block:\n%s\n' "${tdr_parameters}"
@@ -64,7 +62,7 @@ aws_profile_source aws_profile_target"
   local uuid_list='[{"TDR-UUID": "'"${tdr_uuid}"'"}]'
   
   message="$( \
-    ../v2_message_create.sh \
+    ../v2_event_create.sh \
       "${uuid_list}" \
       'TDR' \
       'da-transform-judgments-pipeline/testing/tre_bagit_validation/run.sh' \
