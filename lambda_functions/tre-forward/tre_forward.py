@@ -20,6 +20,7 @@ tre_out_topic_arn = os.environ['TRE_OUT_TOPIC_ARN']
 def lambda_handler(event, context):
     logger.info(f'event:\n{event}')
     records = event['Records'][0]
+    logger.info(f'Records:\n{records}')
     if records not in event:
         raise ValueError(f'Missing key "{records}"')
 
@@ -31,7 +32,9 @@ def lambda_handler(event, context):
     # Extract Meesage coming in from tre-internal-topic
     body = json.loads(records['body'])
     message = json.loads(body['Message'])
+    logger.info(f'Message:\n{message}')
     message_attributes = body['MessageAttributes']
+    logger.info(f'MessageAttributes:\n{message_attributes}')
     # Create message attributes
     message_attributes = {
         key:
@@ -48,4 +51,4 @@ def lambda_handler(event, context):
         Message = json.dumps(message),
         MessageAttributes = message_attributes
     )
-    print(response)
+    logger.info(f'MessageSent:\n{response}')
