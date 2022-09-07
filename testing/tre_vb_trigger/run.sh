@@ -68,15 +68,14 @@ aws_profile_source aws_profile_target"
       'da-transform-judgments-pipeline/testing/tre_bagit_validation/run.sh' \
       "${consignment_type}" \
       'dev' \
-      'consignment-export' \
+      'bagit-available' \
       "${tdr_parameters}"
   )"
   
-  printf 'Generate input message:\n%s\n' "${message}"
+  printf 'Generated input message:\n%s\n' "${message}"
 
   export TRE_STATE_MACHINE_ARN="${state_machine_arn}"
-  export TRE_CONSIGNMENT_KEY_PATH='parameters.consignment-export.reference'
-  export TRE_RETRY_KEY_PATH='parameters.consignment-export.number-of-retries'
+  export TRE_CONSIGNMENT_KEY_PATH='parameters.bagit-available.reference'
   export PYTHONPATH='../../lambda_functions/tre-vb-trigger'
   
   AWS_PROFILE="${aws_profile_target}" python3 run.py "${message}"
