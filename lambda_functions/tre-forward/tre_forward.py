@@ -18,18 +18,18 @@ sns = boto3.client('sns')
 tre_out_topic_arn = os.environ['TRE_OUT_TOPIC_ARN']
 
 def lambda_handler(event, context):
-    logger.info(f'event:\n{event}')
-    records = event['Records'][0]
-    logger.info(f'Records:\n{records}')
-    if records not in event:
-        raise ValueError(f'Missing key "{records}"')
+    logger.info(f'Event:\n{event}')
+    if 'Records' not in event:
+        raise ValueError(f'Missing key "Records"')
 
     # If >1 record, fail here so don't silently ignore unexpected records
-    records_count = len(event[records])
+    records_count = len(event['Records'])
     if records_count != 1:
         raise ValueError(f'Expected 1 record, got {records_count}')
     
     # Extract Meesage coming in from tre-internal-topic
+    records = event['Records'][0]
+    logger.info(f'Records:\n{records}')
     body = json.loads(records['body'])
     message = json.loads(body['Message'])
     logger.info(f'Message:\n{message}')
