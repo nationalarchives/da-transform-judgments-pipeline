@@ -50,21 +50,19 @@ def handler(event, context):
         s3_data_bucket = event['parameters']['bagit-validated']['s3-bucket']
         consignment_reference = event['parameters']['bagit-validated']['reference']
         consignment_type = event['producer']['type']
-        retry_count = int(event['parameters']['bagit-validated']['number-of-retries'])
+        s3_object_root = event['parameters']['bagit-validated']['s3-object-root']
 
         # Create event copy
         output_event = event.copy()
-        output_event[KEY_NUM_RETRIES] = retry_count
         logger.info(f'output_event={output_event}')
         output[KEY_OUTPUT_MESSAGE] = output_event
 
         logger.info(
             f'consignment_reference="{consignment_reference}" '
             f'consignment_type="{consignment_type}" '
-            f'retry_count="{retry_count}" '
             f's3_data_bucket="{s3_data_bucket}" ')
         # set-up config_dicts x 3 & make bagit data
-        s3c = s3_config_dict(consignment_type, consignment_reference, retry_count)
+        s3c = s3_config_dict(s3_object_root)
         bc = bagit_config_dict(consignment_reference)
         info_dict = object_lib.s3_object_to_dictionary(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAG_INFO_TEXT"])
         manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_MANIFEST"])
@@ -120,7 +118,6 @@ def handler(event, context):
         logging.error(f'handler error: {str(e)}')
         output[KEY_ERROR] = True
         output[KEY_ERROR_MESSAGE] = str(e)
-        output[KEY_OUTPUT_MESSAGE][KEY_NUM_RETRIES] = retry_count + 1
 
     # Set output data
     logger.info('handler return')
@@ -155,16 +152,16 @@ def dri_config_dict(consignment_reference, consignment_series):
 def bagit_config_dict(consignment_reference):
     return dict(
         CONSIGNMENT_REFERENCE=consignment_reference,
-        PREFIX_FOR_DATA=consignment_reference + '/data/',
-        BAG_INFO_TEXT=consignment_reference + '/bag-info.txt',
-        BAGIT_MANIFEST=consignment_reference + '/manifest-sha256.txt',
-        BAGIT_METADATA=consignment_reference + '/file-metadata.csv'
+        PREFIX_FOR_DATA='/data/',
+        BAG_INFO_TEXT='/bag-info.txt',
+        BAGIT_MANIFEST='/manifest-sha256.txt',
+        BAGIT_METADATA='/file-metadata.csv'
     )
 
 
-def s3_config_dict(consignment_type, consignment_reference, retry_count):
-    sip_directory = 'sip/'
-    prefix_to_bagit = 'consignments/' + consignment_type + '/' + consignment_reference + '/' + str(retry_count) + '/'
+def s3_config_dict(s3_object_root):
+    sip_directory = '/sip/'
+    prefix_to_bagit = s3_object_root
     return dict(
         PREFIX_TO_BAGIT=prefix_to_bagit,
         PREFIX_TO_SIP=prefix_to_bagit + sip_directory
