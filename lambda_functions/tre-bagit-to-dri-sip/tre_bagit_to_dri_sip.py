@@ -29,7 +29,6 @@ env_environment = common_lib.get_env_var('TRE_ENVIRONMENT', must_exist=True, mus
 KEY_S3_OBJECT_ROOT = 's3-object-root'
 KEY_S3_FOLDER_URL = 's3-folder-url'
 KEY_S3_SHA256_URL = 's3-sha256-url'
-KEY_NUMBER_OF_RETRIES = 'number-of-retries'
 KEY_FILE_TYPE = 'file-type'
 
 EVENT_NAME_INPUT = 'bagit-validated'
@@ -114,7 +113,6 @@ def handler(event, context):
                 tre_event_api.KEY_REFERENCE: consignment_reference,
                 KEY_S3_FOLDER_URL: presigned_tar_gz_url,
                 KEY_S3_SHA256_URL: presigned_checksum_url,
-                KEY_NUMBER_OF_RETRIES: 0,
                 KEY_FILE_TYPE:  "TAR"
             }
         }
