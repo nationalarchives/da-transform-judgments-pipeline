@@ -34,12 +34,9 @@ EVENT_NAME_INPUT = 'bagit-available'
 EVENT_NAME_OUTPUT_OK = 'bagit-received'
 EVENT_NAME_OUTPUT_ERROR = 'bagit-validation-error'
 
-KEY_REFERENCE = 'reference'
 KEY_RESOURCE = 'resource'
 KEY_RESOURCE_VALIDATION = 'resource-validation'
 KEY_VALUE = 'value'
-KEY_ERRORS = 'errors'
-KEY_S3_BUCKET = 's3-bucket'
 KEY_S3_BAGIT_NAME = 's3-bagit-name'
 
 
@@ -62,7 +59,7 @@ def handler(event, context):
 
     # Get required values from input event's parameter block
     input_params = event[tre_event_api.KEY_PARAMETERS][EVENT_NAME_INPUT]
-    consignment_reference = input_params[KEY_REFERENCE]
+    consignment_reference = input_params[tre_event_api.KEY_REFERENCE]
     s3_bagit_url = input_params[KEY_RESOURCE][KEY_VALUE]
     s3_sha_url = input_params[KEY_RESOURCE_VALIDATION][KEY_VALUE]
     consignment_type = event[tre_event_api.KEY_PRODUCER][tre_event_api.KEY_TYPE]
@@ -126,8 +123,8 @@ def handler(event, context):
 
         output_parameter_block = {
             EVENT_NAME_OUTPUT_OK: {
-                KEY_REFERENCE: consignment_reference,
-                KEY_S3_BUCKET: env_output_bucket,
+                tre_event_api.KEY_REFERENCE: consignment_reference,
+                tre_event_api.KEY_S3_BUCKET: env_output_bucket,
                 KEY_S3_BAGIT_NAME: s3_bagit_name
             }
         }
@@ -146,8 +143,8 @@ def handler(event, context):
         logging.error(f'handler error: %s', str(e))
         output_parameter_block = {
             EVENT_NAME_OUTPUT_ERROR: {
-                KEY_REFERENCE: consignment_reference,
-                KEY_ERRORS: [str(e)]
+                tre_event_api.KEY_REFERENCE: consignment_reference,
+                tre_event_api.KEY_ERRORS: [str(e)]
             }
         }
 
