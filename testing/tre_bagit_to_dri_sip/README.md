@@ -21,9 +21,9 @@ To run `test-bagit-to-dri sip` locally you need to follow these steps:
    (located in the same location as this readme)
 
     ```bash
-    ./run.sh <s3_bucket_in> <s3_bucket_out> <consignment_type> <timeout> <AWS_MANAGEMENT_PROFILE_NAME>
+    ./run.sh <expected_data_s3_bucket> <s3_bucket_in> <s3_bucket_out> <consignment_type> <timeout> <AWS_MANAGEMENT_PROFILE_NAME>
     
    Example Command
     
-   ./run.sh dev-tre-common-data dev-tre-dpsg-out TDR-2022-NQ3 standard 60 tna-acc-manag-admin
+   ./run.sh dev-te-data dev-tre-common-data dev-tre-dpsg-out TDR-2022-NQ3 standard 60 tna-acc-manag-admin
     ```
