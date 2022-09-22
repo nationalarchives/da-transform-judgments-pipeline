@@ -30,8 +30,8 @@ main() {
   AWS_TEST_FILE_PATH=${CONSIGNMENT}${consignment_type}/${consignment_reference}${TEST_UUID_DIRECTORY}${consignment_reference}
 
   #tmp clean up
-  aws s3 rm s3://"${s3_bucket_in}"/"${AWS_POST_TEST_PATH}" --recursive
-  aws s3 rm s3://"${s3_bucket_out}"/"${AWS_POST_TEST_PATH}" --recursive
+  aws s3 rm s3://"${s3_bucket_in}"/"${AWS_POST_TEST_PATH:?}" --recursive
+  aws s3 rm s3://"${s3_bucket_out}"/"${AWS_POST_TEST_PATH:?}" --recursive
 
   printf -v event '{
     "version": "1.0.0",
@@ -82,21 +82,21 @@ main() {
   printf 'Generated input event:\n%s\nInvoking test...\n' "${event}"
 
   mkdir -p /tmp/tre-test/input
-  aws s3api get-object --bucket ${s3_bucket_testdata}  --key ${CONSIGNMENT}"${consignment_type}"/"${consignment_reference}".tar.gz "${consignment_reference}".tar.gz --profile "${aws_profile}"
-  tar -xf ${consignment_reference}.tar.gz -C /tmp/tre-test/input
+  aws s3api get-object --bucket "${s3_bucket_testdata}"  --key ${CONSIGNMENT}"${consignment_type}"/"${consignment_reference}".tar.gz "${consignment_reference}".tar.gz --profile "${aws_profile}"
+  tar -xf "${consignment_reference}".tar.gz -C /tmp/tre-test/input
   aws s3 cp --recursive /tmp/tre-test/input s3://"${s3_bucket_in}"/"${AWS_POST_TEST_PATH}"
 
   python3 test-bagit-to-dri-sip.py "${event}"
 
-  aws s3api get-object --bucket ${s3_bucket_out}  --key "${AWS_TEST_FILE_PATH}"/sip/${batch_ref}.tar.gz ${batch_ref}_actual.tar.gz
-  aws s3api get-object --bucket ${s3_bucket_out}  --key "${AWS_TEST_FILE_PATH}"/sip/${batch_ref}.tar.gz.sha256 ${batch_ref}_actual.tar.gz.sha256
+  aws s3api get-object --bucket "${s3_bucket_out}"  --key "${AWS_TEST_FILE_PATH}"/sip/"${batch_ref}".tar.gz "${batch_ref}"_actual.tar.gz
+  aws s3api get-object --bucket "${s3_bucket_out}"  --key "${AWS_TEST_FILE_PATH}"/sip/"${batch_ref}".tar.gz.sha256 "${batch_ref}"_actual.tar.gz.sha256
 
   mkdir -p /tmp/tre-test/actual
-  tar -xf ${batch_ref}_actual.tar.gz -C /tmp/tre-test/actual
+  tar -xf "${batch_ref}"_actual.tar.gz -C /tmp/tre-test/actual
 
   mkdir -p /tmp/tre-test/expected
-  aws s3api get-object --bucket ${s3_bucket_testdata}  --key ${CONSIGNMENT}"${consignment_type}"/"${batch_ref}"_expected.tar.gz ${batch_ref}_expected.tar.gz --profile "${aws_profile}"
-  tar -xf ${batch_ref}_expected.tar.gz -C /tmp/tre-test/expected
+  aws s3api get-object --bucket "${s3_bucket_testdata}"  --key ${CONSIGNMENT}"${consignment_type}"/"${batch_ref}"_expected.tar.gz "${batch_ref}"_expected.tar.gz --profile "${aws_profile}"
+  tar -xf "${batch_ref}"_expected.tar.gz -C /tmp/tre-test/expected
 
   diff -q -s -r /tmp/tre-test/actual /tmp/tre-test/expected
 
@@ -112,8 +112,8 @@ main() {
   # clean up
   rm -rf /tmp/tre-test/*
   rm "${consignment_reference}".tar.gz
-  rm ${batch_ref}_actual.tar.gz
-  rm ${batch_ref}_actual.tar.gz.sha256
+  rm "${batch_ref}"_actual.tar.gz
+  rm "${batch_ref}"_actual.tar.gz.sha256
   aws s3 rm s3://"${s3_bucket_in}"/"${AWS_POST_TEST_PATH}" --recursive
   aws s3 rm s3://"${s3_bucket_out}"/"${AWS_POST_TEST_PATH}" --recursive
   echo "$TEST_RESULT"
