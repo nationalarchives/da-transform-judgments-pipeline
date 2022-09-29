@@ -41,7 +41,6 @@ test_consignment_archive_s3_path="consignments/judgment/${consignment_ref}.tar.g
 test_consignment_checksum_s3_path="consignments/judgment/${consignment_ref}.tar.gz.sha256"
 message_count=3
 
-
 # To execute tre-vb-trigger handler locally:
 tre_state_machine_arn="arn:aws:states:region:000000000000:stateMachine:${environment_name}-tre-validate-bagit"
 
@@ -73,6 +72,19 @@ AWS_PROFILE="${aws_profile_deployment}" ./run_batch.py \
   --message_count "${message_count}" \
   --sns
 ```
+
+Generating errors:
+
+For local execution (when not using `--sns`), a Step Function execution error
+can be forced by setting `TRE_STATE_MACHINE_ARN` to an invalid value.
+
+For local or SNS execution, other errors can be forced by specifying one of
+the following arguments:
+
+* `--empty_event` : sends an invalid empty JSON event; the trigger function
+  will fail because it can't extract a UUID value for the execution name
+* `--incomplete_event` : sends an invalid JSON event that only has a UUID
+  field; the Step Function execution will fail with a schema error
 
 # Using run.sh/run.py
 

@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from aws_test_lib.aws_tester import AWSTester
 from tre_event_lib import tre_event_api
 import time
+import uuid
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,10 +46,12 @@ def create_bagit_available_event_json(
         test_consignment_s3_bucket: str,
         test_consignment_archive_s3_path: str,
         test_consignment_checksum_s3_path: str
-):
+) -> str:
     """
-    Generate a `bagit-available` event and submit it to `sns_topic_name` using
-    `at_deployment`.
+    Return a `bagit-available` event as a JSON string, with values derived
+    from the supplied parameters. The helper object `at_management` is used to
+    generate valid pre-signed URLs for the given S3 objects (i.e. the BagIt
+    archive and BagIt archive checksum files).
     """
     EVENT_BAGIT_AVAILABLE = 'bagit-available'
 
@@ -120,7 +123,9 @@ def main(
         test_consignment_archive_s3_path: str,
         test_consignment_checksum_s3_path: str,
         message_count: int,
-        use_sns: bool
+        use_sns: bool,
+        empty_event: bool,
+        incomplete_event: bool
 ):
     """
     Submit `message_count` events to SNS topic `environment`-tre-in.
@@ -143,17 +148,27 @@ def main(
     logger.info(SEPARATOR)
     message_list = []
     for _ in range(message_count):
-        message_list.append(
-            create_bagit_available_event_json(
-                at_management=at_management,
-                environment_name=environment_name,
-                test_consignment_ref=test_consignment_ref,
-                test_consignment_type=test_consignment_type,
-                test_consignment_s3_bucket=test_consignment_s3_bucket,
-                test_consignment_archive_s3_path=test_consignment_archive_s3_path,
-                test_consignment_checksum_s3_path=test_consignment_checksum_s3_path
+        if empty_event or incomplete_event:
+            malformed_event = {}
+            if incomplete_event:
+                malformed_event[tre_event_api.KEY_UUIDS] = []
+                malformed_event[tre_event_api.KEY_UUIDS].append(
+                    {'test-UUID': str(uuid.uuid4())}
+                )
+
+            message_list.append(json.dumps(malformed_event))
+        else:
+            message_list.append(
+                create_bagit_available_event_json(
+                    at_management=at_management,
+                    environment_name=environment_name,
+                    test_consignment_ref=test_consignment_ref,
+                    test_consignment_type=test_consignment_type,
+                    test_consignment_s3_bucket=test_consignment_s3_bucket,
+                    test_consignment_archive_s3_path=test_consignment_archive_s3_path,
+                    test_consignment_checksum_s3_path=test_consignment_checksum_s3_path
+                )
             )
-        )
     
     logger.info('len(message_list)=%s', len(message_list))
 
@@ -189,7 +204,7 @@ def main(
 
             simulated_sns_input_records.append(
                 {
-                    'eventSourceARN': 'arn:aws:sqs:example:00example000:some-sqs-in',
+                    'eventSourceARN': 'arn:aws:sqs:example:00example000:local-test',
                     'body': body_json
                 }
             )
@@ -212,8 +227,10 @@ if __name__ == "__main__":
     """
     parser = argparse.ArgumentParser(
         description=(
-            'Runs an end-to-end test from a bagit-available event on tre-in to'
-            'a dri-preingest-sip-available event on tre-out.'))
+            'Send a number of TRE `bagit-available` events in rapid '
+            'succession using either a local tre-vb-trigger function, or one '
+            'deployed to AWS via SNS topic tre-in. Optionally send invalid '
+            'events.'))
 
     parser.add_argument('--aws_profile_management', type=str, required=True,
         help='AWS_PROFILE name for management account (test data source)')
@@ -236,8 +253,20 @@ if __name__ == "__main__":
         help='Number of messages to attempt to send simultaneously')
     parser.add_argument('--sns', action='store_true',
         help='Send messages to SNS instead of running locally')
-    parser.set_defaults(sns=False)
     
+    invalid_event_group = parser.add_mutually_exclusive_group()
+    invalid_event_group.add_argument('--empty_event', action='store_true',
+        help='Send an empty TRE event instead of a valid one')
+    invalid_event_group.add_argument('--incomplete_event', action='store_true',
+        help='Send an empty TRE event instead of a valid one')
+    
+    invalid_event_group.set_defaults(
+        empty_event=False,
+        incomplete_event=False
+    )
+    
+    parser.set_defaults(sns=False)
+
     args = parser.parse_args()
 
     main(
@@ -250,6 +279,8 @@ if __name__ == "__main__":
         test_consignment_archive_s3_path=args.test_consignment_archive_s3_path,
         test_consignment_checksum_s3_path=args.test_consignment_checksum_s3_path,
         message_count=args.message_count,
-        use_sns=args.sns
+        use_sns=args.sns,
+        empty_event=args.empty_event,
+        incomplete_event=args.incomplete_event
     )
     

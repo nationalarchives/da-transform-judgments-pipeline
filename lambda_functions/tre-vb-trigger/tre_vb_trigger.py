@@ -40,6 +40,8 @@ KEY_UUIDS = 'UUIDs'
 TRE_STATE_MACHINE_ARN = os.environ['TRE_STATE_MACHINE_ARN']
 TRE_CONSIGNMENT_KEY_PATH = os.environ['TRE_CONSIGNMENT_KEY_PATH']
 HTTP_OK_STATUS_CODES = [200]
+KEY_EVENT_RECORD = 'event_record'
+KEY_ERROR = 'error'
 
 client = boto3.client('stepfunctions')
 
@@ -199,17 +201,24 @@ def handler(event, context):
             logging.exception(e, stack_info=True)
             execution_fail_list.append(
                 {
-                    'event_record': event_record,
-                    'error': str(e)
+                    KEY_EVENT_RECORD: event_record,
+                    KEY_ERROR: str(e)
                 }
             )
 
     # Raise an error if there were any failed executions
     if len(execution_fail_list) > 0:
         logger.error('Error processing events: %s', execution_fail_list)
+        error_list = [
+            record[KEY_ERROR]
+            for record in execution_fail_list
+            if KEY_ERROR in record
+        ]
+        
         raise TREStepFunctionExecutionError(
             f'Failed to process {len(execution_fail_list)}/'
-            f'{len(event[KEY_RECORDS])} events; see log for details'
+            f'{len(event[KEY_RECORDS])} events; see log for detail, error '
+            f'list is: {error_list}'
         )
 
     # Completed OK, return details of any step function execution(s)
