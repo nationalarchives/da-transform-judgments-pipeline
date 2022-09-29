@@ -193,7 +193,7 @@ def main(
     else:
         # Run Validate BagIt handler locally with bagit-available events
         import tre_vb_trigger
-        simulated_sns_input_records = []
+        simulated_input_records = []
         
         for test_event_json in message_list:
             body_json = json.dumps(
@@ -202,19 +202,19 @@ def main(
                 }
             )
 
-            simulated_sns_input_records.append(
+            simulated_input_records.append(
                 {
                     'eventSourceARN': 'arn:aws:sqs:example:00example000:local-test',
                     'body': body_json
                 }
             )
 
-        simulated_sns_input = {
-            'Records': simulated_sns_input_records
+        simulated_input = {
+            'Records': simulated_input_records
         }
 
         local_result = tre_vb_trigger.handler(
-            event=simulated_sns_input,
+            event=simulated_input,
             context=None
         )
         
