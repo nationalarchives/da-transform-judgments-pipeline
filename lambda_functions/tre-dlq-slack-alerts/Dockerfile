@@ -4,7 +4,7 @@ RUN yum -y update \
     && yum clean all
 
 # Copy function code
-COPY tre_slack_alerts.py ${LAMBDA_TASK_ROOT}
+COPY tre_dlq_slack_alerts.py ${LAMBDA_TASK_ROOT}
 
 
 
