@@ -223,4 +223,6 @@ def handler(event, context):
 
     # Completed OK, return details of any step function execution(s)
     logger.info('Completed OK; execution_ok_list=%s', execution_ok_list)
-    return execution_ok_list
+
+    # default=str to avoid "Object of type datetime is not JSON serializable"
+    return json.dumps(execution_ok_list, default=str)
