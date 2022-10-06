@@ -143,4 +143,4 @@ def lambda_handler(event, context):
 
     # Completed OK, return details of any step function execution(s)
     logger.info('Completed OK; forward_ok_list=%s', forward_ok_list)
-    return forward_ok_list
+    return json.dumps(forward_ok_list, default=str)
