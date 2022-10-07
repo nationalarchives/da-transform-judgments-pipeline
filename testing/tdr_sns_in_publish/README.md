@@ -7,6 +7,7 @@ Generate a sample TDR input message and publish this to the SNS input topic:
   "${s3_object_sha}"
   "${consignment_reference}"
   "${consignment_type}"
+  "${number_of_retries}"
   "${aws_profile_source}"
   "${aws_profile_target}"
 ```
