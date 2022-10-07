@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 docker_image_name=tre-bagit-to-dri-sip
-docker_image_tag=0.0.6
+docker_image_tag=0.0.5
 # shellcheck disable=SC2034  # var imported elsewhere
 docker_image="${docker_image_name}":"${docker_image_tag}"
 # shellcheck disable=SC2034  # var imported elsewhere

@@ -30,7 +30,6 @@ main() {
   AWS_TEST_FILE_PATH=${CONSIGNMENT}${consignment_type}/${consignment_reference}${TEST_UUID_DIRECTORY}${consignment_reference}
 
   #tmp clean up
-  rm -rf /tmp/tre-test/*
   aws s3 rm s3://"${s3_bucket_in}"/"${AWS_POST_TEST_PATH:?}" --recursive
   aws s3 rm s3://"${s3_bucket_out}"/"${AWS_POST_TEST_PATH:?}" --recursive
 

@@ -2,8 +2,6 @@ FROM public.ecr.aws/lambda/python:3.8
 
 # Copy function code
 COPY tre_bagit_to_dri_sip.py ${LAMBDA_TASK_ROOT}
-COPY tre_bagit.py ${LAMBDA_TASK_ROOT}
-COPY tre_bagit_transforms.py ${LAMBDA_TASK_ROOT}
 # Copy schemas that will be added to dri-sip
 COPY closure-schema.txt ${LAMBDA_TASK_ROOT}
 COPY metadata-schema.txt ${LAMBDA_TASK_ROOT}
