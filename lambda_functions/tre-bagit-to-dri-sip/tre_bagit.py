@@ -72,22 +72,7 @@ class BagitData:
         # set dri batch/series/ prefix, escape the uri + append a `/` if folder
         dri_identifier = row.get('Filepath').replace('data/', dc["IDENTIFIER_PREFIX"], 1)
         final_slash_if_folder = "/" if(BagitData.dri_folder(row) == 'folder') else ""
-        print("+====> " + json.dumps(row))
-        print("+====> " + json.dumps(dc))
-        print("+===> " + dri_identifier)
-        result = urllib.parse.quote(dri_identifier).replace('%3A', ':') + final_slash_if_folder
-        print("+===> " + result)
-        return result
-
-    @staticmethod
-    def dri_legal_status(row):
-        # reword for Public Record
-        return 'Public Record(s)' if(row.get('LegalStatus') == 'Public Record') else row.get('LegalStatus')
-
-    @staticmethod
-    def dri_held_by(row):
-        # reword for TNA
-        return 'The National Archives, Kew' if(row.get('HeldBy') == 'TNA') else row.get('HeldBy')
+        return urllib.parse.quote(dri_identifier).replace('%3A', ':') + final_slash_if_folder
 
     def dri_checksum(self, row):
         # comes from the manifest and only exists for files
