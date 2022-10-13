@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-import io
 import logging
-import csv
-import urllib.parse
 from s3_lib import common_lib
 from s3_lib import checksum_lib
 from s3_lib import object_lib
 from s3_lib import tar_lib
 from tre_event_lib import tre_event_api
+from tre_bagit import BagitData
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -192,89 +190,3 @@ def s3_config_dict(s3_object_root):
         PREFIX_TO_BAGIT=s3_object_root,
         PREFIX_TO_SIP=s3_object_root + sip_directory
     )
-
-
-class BagitData:
-
-    def __init__(self, config_dict, info_dict, manifest_dict, csv_data):
-        self.bagit = config_dict
-        self.info_dict = info_dict
-        self.manifest_dict = manifest_dict
-        self.csv_data = list(csv_data)
-        self.consignment_series = self.info_dict.get('Consignment-Series')
-        self.tdr_bagit_export_time = self.info_dict.get('Consignment-Export-Datetime')
-
-    def to_metadata(self, dc):
-        metadata_fieldnames = ['identifier', 'file_name', 'folder', 'date_last_modified', 'checksum',
-                               'rights_copyright', 'legal_status', 'held_by', 'language', 'TDR_consignment_ref']
-        metadata_output = io.StringIO()
-        metadata_writer = csv.DictWriter(metadata_output, fieldnames=metadata_fieldnames, lineterminator="\n")
-        metadata_writer.writeheader()
-        for row in self.csv_data:
-            metadata_writer.writerow({
-                'identifier': self.dri_identifier(row, dc),
-                'file_name': row.get('FileName'),
-                'folder': self.dri_folder(row),
-                'date_last_modified': self.dri_last_modified(row),
-                'checksum': self.dri_checksum(row),
-                'rights_copyright': row.get('RightsCopyright'),
-                'legal_status': self.dri_legal_status(row),
-                'held_by': self.dri_held_by(row),
-                'language': row.get('Language'),
-                'TDR_consignment_ref': self.bagit["CONSIGNMENT_REFERENCE"]})
-        return metadata_output.getvalue()
-
-    def to_closure(self, dc):
-        closure_fieldnames = ['identifier', 'folder', 'closure_start_date', 'closure_period', 'foi_exemption_code',
-                              'foi_exemption_asserted', 'title_public', 'title_alternate', 'closure_type']
-        closure_output = io.StringIO()
-        closure_writer = csv.DictWriter(closure_output, fieldnames=closure_fieldnames, lineterminator="\n")
-        closure_writer.writeheader()
-        for row in self.csv_data:
-            closure_writer.writerow({
-                'identifier': self.dri_identifier(row, dc),
-                'folder': self.dri_folder(row),
-                'closure_start_date': '',
-                'closure_period': 0,
-                'foi_exemption_code': row.get('FoiExemptionCode'),
-                'foi_exemption_asserted': '',
-                'title_public': 'TRUE',
-                'title_alternate': '',
-                'closure_type': 'open_on_transfer'
-            })
-        return closure_output.getvalue()
-
-    # ==== specific transformations for individual field values ====
-    @staticmethod
-    def dri_folder(row):
-        # remove capitalisation coming from tdr
-        return row.get('FileType').lower()
-
-    @staticmethod
-    def dri_identifier(row, dc):
-        # set dri batch/series/ prefix, escape the uri + append a `/` if folder
-        dri_identifier = row.get('Filepath').replace('data/', dc["IDENTIFIER_PREFIX"], 1)
-        final_slash_if_folder = "/" if(BagitData.dri_folder(row) == 'folder') else ""
-        return urllib.parse.quote(dri_identifier).replace('%3A', ':') + final_slash_if_folder
-
-    @staticmethod
-    def dri_legal_status(row):
-        # reword for Public Record
-        return 'Public Record(s)' if(row.get('LegalStatus') == 'Public Record') else row.get('LegalStatus')
-
-    @staticmethod
-    def dri_held_by(row):
-        # reword for TNA
-        return 'The National Archives, Kew' if(row.get('HeldBy') == 'TNA') else row.get('HeldBy')
-
-    def dri_checksum(self, row):
-        # comes from the manifest and only exists for files
-        bagit_manifest_for_row = list(filter(lambda d: d.get('file') == row.get('Filepath'), self.manifest_dict))
-        return bagit_manifest_for_row[0].get('checksum') if(len(bagit_manifest_for_row) == 1) else ''
-
-    def dri_last_modified(self, row):
-        if self.dri_folder(row) == 'file':
-            return row.get('LastModified')
-        else:
-            # use bagit export time for folders as they have no dlm from tdr
-            return self.tdr_bagit_export_time.replace('Z', '', 1)
