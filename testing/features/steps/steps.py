@@ -8,7 +8,6 @@ import shutil
 import os
 
 
-#before
 temp_dir = '/tmp/tre-test/features'
 file_metadata_path = f'{temp_dir}/file-metadata.csv'
 bag_info_path = f'{temp_dir}/bag-info.json'
@@ -84,7 +83,6 @@ def step_impl(context, output):
             metadata_csv.write(metadata)
 
 
-
 @then(u'the file {file_name} has')
 def step_impl(context, file_name):
     # read the required csv file from temp_dir and check values
@@ -94,4 +92,3 @@ def step_impl(context, file_name):
         for k, v in context.table:
             print("assert that key: " + k + " has expected value: " + v + " actual value is: " + row[k])
             assert(row[k] == v)
-

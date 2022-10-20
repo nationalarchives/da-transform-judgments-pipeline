@@ -58,7 +58,7 @@ def handler(event, context):
         )
         # set-up config_dicts x 3 & make bagit data
         s3c = s3_config_dict(s3_object_root)
-        bc = bagit_config_dict
+        bc = bagit_config_dict()
         info_dict = object_lib.s3_object_to_dictionary(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAG_INFO_TEXT"])
         manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_MANIFEST"])
         csv_data = object_lib.s3_object_to_csv(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_METADATA"])
