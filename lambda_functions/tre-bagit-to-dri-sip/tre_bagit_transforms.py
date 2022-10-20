@@ -75,5 +75,30 @@ def simple_dri_closure(bagit_metadata_row):
     return dri_closure
 
 
+def dri_config_dict(consignment_reference, consignment_series) -> object:
+    metadata = 'metadata.csv'
+    closure = 'closure.csv'
+    consignment_reference_part = consignment_reference.split("-")
+    tdr_year = consignment_reference_part[1]
+    tdr_batch_number = consignment_reference_part[2]
+    batch = consignment_series.replace(' ', '') + 'Y' + tdr_year[2:] + 'TB' + tdr_batch_number
+    series = consignment_series.replace(' ', '_')
+    internal_prefix = batch + '/' + series + '/'
+    return dict(
+        BATCH=batch,
+        SERIES=series,
+        INTERNAL_PREFIX=internal_prefix,
+        IDENTIFIER_PREFIX='file:/' + internal_prefix,
+        METADATA=metadata,
+        CLOSURE=closure,
+        METADATA_IN_SIP=internal_prefix + metadata,
+        CLOSURE_IN_SIP=internal_prefix + closure,
+        METADATA_SCHEMA_IN_SIP=internal_prefix + metadata + 's',
+        CLOSURE_SCHEMA_IN_SIP=internal_prefix + closure + 's',
+        METADATA_CHECKSUM_IN_SIP=internal_prefix + metadata + '.sha256',
+        CLOSURE_CHECKSUM_IN_SIP=internal_prefix + closure + '.sha256'
+    )
+
+
 def handle_error(k,v):
     return ValueError("value " + v + "not expected for key " + k)
