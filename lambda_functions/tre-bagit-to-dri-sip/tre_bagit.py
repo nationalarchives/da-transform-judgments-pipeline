@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json
+
 import logging
 import csv
 import io
@@ -26,6 +26,7 @@ class BagitData:
         self.csv_data = list(csv_data)
         self.consignment_series = self.info_dict.get('Consignment-Series')
         self.tdr_bagit_export_time = self.info_dict.get('Consignment-Export-Datetime')
+        self.consignment_reference = self.info_dict.get('Internal-Sender-Identifier')
 
     def to_metadata(self, dc):
         metadata_fieldnames = ['identifier', 'file_name', 'folder', 'date_last_modified', 'checksum',
@@ -39,7 +40,7 @@ class BagitData:
             dri_metadata['identifier'] = result
             dri_metadata['date_last_modified'] = self.dri_last_modified(row)
             dri_metadata['checksum'] = self.dri_checksum(row)
-            dri_metadata['TDR_consignment_ref'] = self.bagit["CONSIGNMENT_REFERENCE"]
+            dri_metadata['TDR_consignment_ref'] = self.consignment_reference
             metadata_writer.writerow(dri_metadata)
         return metadata_output.getvalue()
 
