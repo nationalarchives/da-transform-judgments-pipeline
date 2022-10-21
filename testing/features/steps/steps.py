@@ -15,10 +15,11 @@ manifest_path = f'{temp_dir}/manifest.json'
 
 
 def make_clean_temp_dir(temp_dir):
-    try:
-        shutil.rmtree(temp_dir)
-    except OSError as e:
-        return IOError("Error: %s : %s" % (temp_dir, e.strerror))
+    if os.path.exists(temp_dir):
+        try:
+            shutil.rmtree(temp_dir)
+        except OSError as e:
+            return IOError("Error: %s : %s" % (temp_dir, e.strerror))
     os.makedirs(temp_dir, exist_ok=True)
 
 
