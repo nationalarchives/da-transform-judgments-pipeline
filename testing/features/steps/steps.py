@@ -1,5 +1,7 @@
-import json
+import sys
+sys.path.append("../lambda_functions/tre-bagit-to-dri-sip")
 
+import json
 from behave import *
 from tre_bagit import BagitData
 from tre_bagit_transforms import dri_config_dict
