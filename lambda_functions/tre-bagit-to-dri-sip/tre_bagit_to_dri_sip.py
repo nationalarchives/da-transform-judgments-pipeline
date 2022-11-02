@@ -165,3 +165,7 @@ def s3_config_dict(s3_object_root):
         PREFIX_TO_BAGIT=s3_object_root,
         PREFIX_TO_SIP=s3_object_root + sip_directory
     )
+
+
+def sanitize_dictionary(dictionary_to_sanitize=dict):
+    return {k: (v.replace(",", "").replace("  ", "") if k == "Filepath" else v) for k, v in dictionary_to_sanitize.items()}

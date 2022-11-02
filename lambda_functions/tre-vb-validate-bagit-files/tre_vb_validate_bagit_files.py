@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import os
+import shutil
 from s3_lib import checksum_lib
 from s3_lib import tar_lib
 from s3_lib import object_lib
@@ -71,7 +72,7 @@ def handler(event, context):
         # Unpack tar in temporary bucket; use path prefix, if there is one
         output_prefix = os.path.split(s3_bagit_name)[0]
         output_prefix = output_prefix + \
-            '/' if len(output_prefix) > 0 else output_prefix
+                        '/' if len(output_prefix) > 0 else output_prefix
         extracted_object_list = tar_lib.untar_s3_object(
             s3_bucket, s3_bagit_name, output_prefix=output_prefix)
         logger.info('extracted_object_list=%s', extracted_object_list)
@@ -130,6 +131,14 @@ def handler(event, context):
             raise ValueError(
                 f'Incorrect data file count; {extracted_total_count} extracted'
                 f'but {s3_check_list_count} found')
+
+        # check to see if files are in a "content" folder, if not create and move them there.
+        content_dir_existence = f'{data_dir}content/'
+        if not os.path.isdir(content_dir_existence):
+            os.mkdir(content_dir_existence)
+            files_in_data_folder = os.listdir(data_dir)
+            for files in files_in_data_folder:
+                shutil.move(os.path.join(data_dir, files), content_dir_existence)
 
         output_parameter_block = {
             EVENT_NAME_OUTPUT_OK: {
