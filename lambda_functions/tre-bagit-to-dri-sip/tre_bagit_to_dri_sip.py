@@ -56,6 +56,14 @@ def handler(event, context):
             f's3_data_bucket="{s3_data_bucket}" '
             f's3_object_root="{s3_object_root}" '
         )
+
+        folder_check_manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket,
+                                                                  s3_object_root + "/manifest-sha256.txt")
+        folder_check = False
+        if folder_check_manifest_dict[0]['file'].split("/")[0:2] != ["data", "content"]:
+            if folder_check_manifest_dict[0]['file'].split("/")[0] == "data":
+                folder_check = True
+
         # set-up config_dicts x 3 & make bagit data
         s3c = s3_config_dict(s3_object_root)
         bc = bagit_config_dict()
@@ -63,7 +71,7 @@ def handler(event, context):
         manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_MANIFEST"])
         csv_data = object_lib.s3_object_to_csv(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["BAGIT_METADATA"])
         bagit_data = BagitData(bc, info_dict, manifest_dict, csv_data)
-        dc = dri_config_dict(consignment_reference, bagit_data.consignment_series)
+        dc = dri_config_dict(consignment_reference, bagit_data.consignment_series, folder_check)
         # csv files
         closure_csv = bagit_data.to_closure(dc)
         object_lib.string_to_s3_object(closure_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
@@ -83,11 +91,14 @@ def handler(event, context):
             object_lib.string_to_s3_object(file.read(), s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_SCHEMA_IN_SIP"])
         # zip it all up
         data_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"])
-        data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"], dc["INTERNAL_PREFIX"])
+        data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"],
+                                                     dc["FOLDER_FILE_PREFIX"])
+
         metadata_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"])
-        metadata_objects_to_zip = tar_lib.S3objectsToZip(metadata_objects, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"], dc["INTERNAL_PREFIX"])
+        metadata_objects_to_zip = tar_lib.S3objectsToZip(metadata_objects, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"],
+                                                         dc["INTERNAL_PREFIX"])
         sip_zip_object = dc["BATCH"] + ".tar.gz"
-        sip_zip_key= s3c["PREFIX_TO_SIP"] + sip_zip_object
+        sip_zip_key = s3c["PREFIX_TO_SIP"] + sip_zip_object
         tar_lib.s3_objects_to_s3_tar_gz_file_with_prefix_substitution(
             s3_bucket_in=s3_data_bucket,
             s3_objects_with_prefix_subs=(metadata_objects_to_zip, data_objects_to_zip),
@@ -96,7 +107,8 @@ def handler(event, context):
         )
         # make the checksum of the zip
         sip_zip_checksum = checksum_lib.get_s3_object_checksum(env_out_bucket, sip_zip_key)
-        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_out_bucket, sip_zip_key + '.sha256')
+        object_lib.string_to_s3_object(f'{sip_zip_checksum}  {sip_zip_object}\n', env_out_bucket,
+                                       sip_zip_key + '.sha256')
         # make presigned urls and add to output message
         presigned_tar_gz_url = object_lib.get_s3_object_presigned_url(
             bucket=env_out_bucket,
@@ -112,7 +124,7 @@ def handler(event, context):
                 tre_event_api.KEY_REFERENCE: consignment_reference,
                 KEY_S3_FOLDER_URL: presigned_tar_gz_url,
                 KEY_S3_SHA256_URL: presigned_checksum_url,
-                KEY_FILE_TYPE:  "TAR"
+                KEY_FILE_TYPE: "TAR"
             }
         }
 

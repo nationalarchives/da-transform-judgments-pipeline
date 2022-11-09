@@ -26,4 +26,8 @@ To run `test-bagit-to-dri sip` locally you need to follow these steps:
    Example Command
     
    ./run.sh dev-te-data dev-tre-common-data dev-tre-dpsg-out TDR-2022-NQ3 standard 60 tna-acc-manag-admin
+   
+   Example Command for file that needs to have file operations / adjustments to place objects into a content folder
+   
+   ./run.sh dev-te-testdata dev-tre-common-data dev-tre-dpsg-out TDR-2022-DNQP standard 60 MOCK1123Y22TBDNQP tna-acc-manag-admin
     ```

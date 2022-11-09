@@ -75,7 +75,7 @@ def simple_dri_closure(bagit_metadata_row):
     return dri_closure
 
 
-def dri_config_dict(consignment_reference, consignment_series) -> object:
+def dri_config_dict(consignment_reference, consignment_series, folder_check) -> object:
     metadata = 'metadata.csv'
     closure = 'closure.csv'
     consignment_reference_part = consignment_reference.split("-")
@@ -83,12 +83,17 @@ def dri_config_dict(consignment_reference, consignment_series) -> object:
     tdr_batch_number = consignment_reference_part[2]
     batch = consignment_series.replace(' ', '') + 'Y' + tdr_year[2:] + 'TB' + tdr_batch_number
     series = consignment_series.replace(' ', '_')
-    internal_prefix = batch + '/' + series + '/'
+    internal_prefix = batch + '/' + series + "/"
+    if folder_check:
+        folder_file_prefix = batch + '/' + series + "/content/"
+    else:
+        folder_file_prefix = internal_prefix
     return dict(
         BATCH=batch,
         SERIES=series,
         INTERNAL_PREFIX=internal_prefix,
-        IDENTIFIER_PREFIX='file:/' + internal_prefix,
+        IDENTIFIER_PREFIX='file:/' + folder_file_prefix,
+        FOLDER_FILE_PREFIX=folder_file_prefix,
         METADATA=metadata,
         CLOSURE=closure,
         METADATA_IN_SIP=internal_prefix + metadata,

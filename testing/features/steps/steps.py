@@ -71,7 +71,7 @@ def step_impl(context, output):
         file_metadata = csv.DictReader(file_metadata)
         bagit = BagitData(config_dict, info_dict, manifest_row, file_metadata)
     # run the required transformation and write the csv file to temp_dir
-    dc = dri_config_dict(bagit.consignment_reference, bagit.consignment_series)
+    dc = dri_config_dict(bagit.consignment_reference, bagit.consignment_series, folder_check=False)
     if output == dc['CLOSURE']:
         closure = bagit.to_closure(dc)
         closure_filename = dc['CLOSURE']
