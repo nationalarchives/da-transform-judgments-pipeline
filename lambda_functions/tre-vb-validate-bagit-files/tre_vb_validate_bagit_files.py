@@ -70,8 +70,7 @@ def handler(event, context):
     try:
         # Unpack tar in temporary bucket; use path prefix, if there is one
         output_prefix = os.path.split(s3_bagit_name)[0]
-        output_prefix = output_prefix + \
-                        '/' if len(output_prefix) > 0 else output_prefix
+        output_prefix = output_prefix + '/' if len(output_prefix) > 0 else output_prefix
         extracted_object_list = tar_lib.untar_s3_object(
             s3_bucket, s3_bagit_name, output_prefix=output_prefix)
         logger.info('extracted_object_list=%s', extracted_object_list)
