@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import logging
 import os
-import shutil
 from s3_lib import checksum_lib
 from s3_lib import tar_lib
 from s3_lib import object_lib
@@ -93,7 +92,7 @@ def handler(event, context):
         # +1 file here as root manifest doesn't include itself (Catch-22...)
         manifests_total_count = 1 + manifest_root_count + manifest_data_count
 
-        # Determine how many files were extracted from the archive
+        # Determine how many files were extracted from the archive
         extracted_total_count = len(extracted_object_list)
 
         # Determine how many of the extracted files are in the data sub-directory
@@ -121,7 +120,7 @@ def handler(event, context):
                 f'Incorrect data file count; {manifest_data_count} in manifest'
                 f'but {extracted_data_count} found')
 
-        # Verify there are no additional unexpected files in the s3 location
+        # Verify there are no additional unexpected files in the s3 location
         s3_check_dir = f'{unpacked_folder_name}/'
         s3_check_list = object_lib.s3_ls(s3_bucket, s3_check_dir)
         s3_check_list_count = len(s3_check_list)
@@ -131,14 +130,6 @@ def handler(event, context):
             raise ValueError(
                 f'Incorrect data file count; {extracted_total_count} extracted'
                 f'but {s3_check_list_count} found')
-
-        # check to see if files are in a "content" folder, if not create and move them there.
-        content_dir_existence = f'{data_dir}content/'
-        if not os.path.isdir(content_dir_existence):
-            os.mkdir(content_dir_existence)
-            files_in_data_folder = os.listdir(data_dir)
-            for files in files_in_data_folder:
-                shutil.move(os.path.join(data_dir, files), content_dir_existence)
 
         output_parameter_block = {
             EVENT_NAME_OUTPUT_OK: {
