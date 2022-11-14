@@ -78,7 +78,7 @@ def handler(event, context):
         bagit_data = BagitData(bc, info_dict, manifest_dict, csv_data)
         dc = dri_config_dict(consignment_reference, bagit_data.consignment_series, folder_check)
         # csv files
-        closure_csv = bagit_data.to_closure(dc, replace_folder)
+        closure_csv = bagit_data.to_closure(dc, replace_folder, folder_check)
         object_lib.string_to_s3_object(closure_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
         metadata_csv = bagit_data.to_metadata(dc, replace_folder)
         object_lib.string_to_s3_object(metadata_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])

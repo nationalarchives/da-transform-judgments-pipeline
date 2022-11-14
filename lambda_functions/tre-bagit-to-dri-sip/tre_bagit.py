@@ -16,6 +16,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+folder_to_add = {'Filepath': 'data/', 'FileName': 'content', 'FileType': 'Folder', 'Filesize': '', 'RightsCopyright': 'Crown Copyright', 'LegalStatus': 'Public Record(s)', 'HeldBy': 'The National Archives, Kew', 'Language': 'English', 'FoiExemptionCode': '', 'LastModified': '', 'OriginalFilePath': ''}
+
 
 class BagitData:
 
@@ -52,15 +54,19 @@ class BagitData:
                     logger.info(f"folder being removed {folder_to_remove} and replaced with 'content'")
                     del dri_metadata['file_name']
                     dri_metadata['file_name'] = "content"
+
             metadata_writer.writerow(dri_metadata)
         return metadata_output.getvalue()
 
-    def to_closure(self, dc, replace_folder):
+    def to_closure(self, dc, replace_folder, folder_check):
         closure_fieldnames = ['identifier', 'folder', 'closure_start_date', 'closure_period', 'foi_exemption_code',
                               'foi_exemption_asserted', 'title_public', 'title_alternate', 'closure_type']
         closure_output = io.StringIO()
         closure_writer = csv.DictWriter(closure_output, fieldnames=closure_fieldnames, lineterminator="\n")
         closure_writer.writeheader()
+        if folder_check:
+            if not replace_folder:
+                self.csv_data.append(folder_to_add)
         for row in self.csv_data:
             dri_closure = tre_bagit_transforms.simple_dri_closure(row)
             dri_closure['identifier'] = self.dri_identifier(row, dc, replace_folder)
@@ -83,11 +89,11 @@ class BagitData:
     def dri_identifier(row, dc, replace_folder):
         # set dri batch/series/ prefix, escape the uri + append a `/` if folder
         # remove incorrectly named folder and call it "content" if specified
-        folder_to_remove = f"/{row.get('Filepath').split('/')[1]}"
         dri_identifier = row.get('Filepath').replace('data/', dc["IDENTIFIER_PREFIX"], 1)
         if replace_folder:
+            folder_to_remove = f"/{row.get('Filepath').split('/')[1]}"
             dri_identifier = dri_identifier.replace(folder_to_remove, "")
-        final_slash_if_folder = "/" if(BagitData.dri_folder(row) == 'folder') else ""
+        final_slash_if_folder = "/" if(BagitData.dri_folder(row) == 'folder' and row["Filepath"] != "data/") else ""
         return urllib.parse.quote(dri_identifier).replace('%3A', ':') + final_slash_if_folder
 
     def dri_checksum(self, row):
