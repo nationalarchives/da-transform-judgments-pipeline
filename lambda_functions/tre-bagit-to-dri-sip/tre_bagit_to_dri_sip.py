@@ -50,6 +50,9 @@ def handler(event, context):
         consignment_type = event[tre_event_api.KEY_PRODUCER][tre_event_api.KEY_TYPE]
         s3_object_root = event[tre_event_api.KEY_PARAMETERS][EVENT_NAME_INPUT][KEY_S3_OBJECT_ROOT]
 
+        replace_folder = True
+        # This parameter will eventually need to be
+
         logger.info(
             f'consignment_reference="{consignment_reference}" '
             f'consignment_type="{consignment_type}" '
@@ -73,9 +76,9 @@ def handler(event, context):
         bagit_data = BagitData(bc, info_dict, manifest_dict, csv_data)
         dc = dri_config_dict(consignment_reference, bagit_data.consignment_series, folder_check)
         # csv files
-        closure_csv = bagit_data.to_closure(dc)
+        closure_csv = bagit_data.to_closure(dc, replace_folder)
         object_lib.string_to_s3_object(closure_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_IN_SIP"])
-        metadata_csv = bagit_data.to_metadata(dc)
+        metadata_csv = bagit_data.to_metadata(dc, replace_folder)
         object_lib.string_to_s3_object(metadata_csv, s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])
         # checksums for csv files
         metadata_checksum = checksum_lib.get_s3_object_checksum(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["METADATA_IN_SIP"])

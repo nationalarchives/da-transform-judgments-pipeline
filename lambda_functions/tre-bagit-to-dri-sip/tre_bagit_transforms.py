@@ -85,9 +85,10 @@ def dri_config_dict(consignment_reference, consignment_series, folder_check) -> 
     series = consignment_series.replace(' ', '_')
     internal_prefix = batch + '/' + series + "/"
     if folder_check:
-        folder_file_prefix = batch + '/' + series + "/content/"
+        folder_file_prefix = internal_prefix + "content/"
     else:
         folder_file_prefix = internal_prefix
+
     return dict(
         BATCH=batch,
         SERIES=series,
