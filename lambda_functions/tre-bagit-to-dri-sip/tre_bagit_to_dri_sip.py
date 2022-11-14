@@ -50,7 +50,7 @@ def handler(event, context):
         consignment_type = event[tre_event_api.KEY_PRODUCER][tre_event_api.KEY_TYPE]
         s3_object_root = event[tre_event_api.KEY_PARAMETERS][EVENT_NAME_INPUT][KEY_S3_OBJECT_ROOT]
 
-        replace_folder = True
+        replace_folder = False
         # This parameter will eventually need to be updated to be derived from the message
 
         logger.info(
