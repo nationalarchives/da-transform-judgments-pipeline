@@ -62,9 +62,11 @@ def handler(event, context):
 
         folder_check_manifest_dict = checksum_lib.get_manifest_s3(s3_data_bucket,
                                                                   s3_object_root + "/manifest-sha256.txt")
+        first_two_prefix_folders = folder_check_manifest_dict[0]['file'].split("/")[0:2]
+        first_prefix_folder = folder_check_manifest_dict[0]['file'].split("/")[0]
         folder_check = False
-        if folder_check_manifest_dict[0]['file'].split("/")[0:2] != ["data", "content"]:
-            if folder_check_manifest_dict[0]['file'].split("/")[0] == "data":
+        if first_two_prefix_folders != ["data", "content"]:
+            if first_prefix_folder == "data":
                 folder_check = True
 
         # set-up config_dicts x 3 & make bagit data
@@ -94,7 +96,16 @@ def handler(event, context):
             object_lib.string_to_s3_object(file.read(), s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["CLOSURE_SCHEMA_IN_SIP"])
         # zip it all up
         data_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"])
-        data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] + bc["PREFIX_FOR_DATA"],
+
+        if replace_folder:
+            folder_to_remove = f"{first_two_prefix_folders[1]}/"
+            data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] +
+                                                         bc["PREFIX_FOR_DATA"] +
+                                                         folder_to_remove,
+                                                         dc["FOLDER_FILE_PREFIX"])
+        else:
+            data_objects_to_zip = tar_lib.S3objectsToZip(data_objects, s3c["PREFIX_TO_BAGIT"] +
+                                                     bc["PREFIX_FOR_DATA"],
                                                      dc["FOLDER_FILE_PREFIX"])
 
         metadata_objects = object_lib.s3_ls(s3_data_bucket, s3c["PREFIX_TO_SIP"] + dc["INTERNAL_PREFIX"])
