@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/dotnet:7.2023.01.11.07 AS base
+FROM public.ecr.aws/lambda/dotnet:7 AS base
 
 WORKDIR /var/task
 
