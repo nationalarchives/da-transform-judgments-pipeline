@@ -1,8 +1,8 @@
-FROM public.ecr.aws/lambda/dotnet:5.0 AS base
+FROM public.ecr.aws/lambda/dotnet:7 AS base
 
 WORKDIR /var/task
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
 
 WORKDIR /src
 
